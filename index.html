@@ -1,1906 +1,1357 @@
 <!DOCTYPE html>
 <html lang="zh-HK">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>歡樂嘉年華：經典滾球跑馬機 (Roll-a-Ball Derby)</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>經典嘉年華：碌波跑馬仔 (Roll-a-Ball Derby)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Chango&family=Noto+Sans+TC:wght@400;700;900&family=Press+Start+2P&display=swap');
-
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@500;700;900&family=Orbitron:wght@700;900&display=swap');
     body {
-      touch-action: none;
+      font-family: 'Noto Sans TC', sans-serif;
       user-select: none;
       -webkit-user-select: none;
-      font-family: 'Noto Sans TC', sans-serif;
-      background: radial-gradient(circle at 50% 20%, #1e1136 0%, #0d0718 100%);
+      touch-action: none;
+      overflow: hidden;
+      background: #120905;
     }
-
-    .retro-font {
-      font-family: 'Press Start 2P', monospace;
+    .arcade-num {
+      font-family: 'Orbitron', monospace;
     }
-
-    .arcade-border {
-      box-shadow: 0 0 20px rgba(255, 191, 0, 0.4), inset 0 0 15px rgba(255, 255, 255, 0.2);
+    .bulb {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      display: inline-block;
+      animation: blink 1s infinite alternate;
     }
-
-    .neon-text-gold {
-      text-shadow: 0 0 5px #ffd700, 0 0 15px #ff8c00, 0 0 30px #ff4500;
+    .bulb:nth-child(odd) {
+      animation-delay: 0.5s;
     }
-
-    .neon-text-cyan {
-      text-shadow: 0 0 5px #00ffff, 0 0 15px #00bfff;
-    }
-
-    /* 走馬燈霓虹燈邊框動畫 */
-    @keyframes marqueeLight {
-      0% { filter: hue-rotate(0deg); }
-      100% { filter: hue-rotate(360deg); }
-    }
-
-    .arcade-lights {
-      animation: marqueeLight 4s linear infinite;
+    @keyframes blink {
+      0% { background: #fde047; box-shadow: 0 0 6px #fde047, 0 0 10px #f59e0b; opacity: 1; }
+      100% { background: #713f12; box-shadow: none; opacity: 0.45; }
     }
   </style>
 </head>
-<body id="appBody" class="min-h-screen text-white flex flex-col items-center justify-between p-2 sm:p-4 overflow-hidden select-none transition-colors duration-500">
+<body class="w-screen h-screen flex flex-col items-center justify-center p-1 sm:p-2">
 
-  <!-- 頂部：標題與指示板 -->
-  <header id="appHeader" class="w-full max-w-4xl flex flex-wrap items-center justify-between gap-2 px-3 sm:px-4 py-2 bg-gradient-to-r from-red-950/80 via-amber-950/80 to-red-950/80 rounded-2xl border-2 border-amber-500/60 shadow-lg backdrop-blur mb-1.5 transition-all duration-500">
-    <div class="flex items-center space-x-2">
-      <span id="themeLogo" class="text-2xl sm:text-3xl">🎪</span>
-      <div>
-        <h1 id="themeTitle" class="text-base sm:text-xl font-black tracking-wider text-amber-300 neon-text-gold">懷舊荔園滾球跑馬機</h1>
-        <p class="text-[11px] text-amber-200/70 hidden md:block">將球推入遠端標靶洞！進洞越多，你的馬跑得越快！</p>
+  <!-- 街機主外框 -->
+  <div id="cabinetFrame" class="w-full max-w-4xl h-full max-h-[940px] rounded-2xl border-4 border-yellow-600 shadow-2xl flex flex-col overflow-hidden relative transition-colors duration-300" style="background: #2b1408;">
+
+    <!-- 頂部燈箱與控制列 -->
+    <div id="headerBar" class="px-2 py-1.5 bg-gradient-to-r from-red-950 via-red-800 to-red-950 border-b-2 border-yellow-500 flex flex-wrap items-center justify-between gap-1.5 z-20 shrink-0">
+      <!-- 標題 -->
+      <div class="flex items-center gap-1.5">
+        <span class="bulb"></span>
+        <h1 class="text-sm sm:text-base font-black tracking-wider text-yellow-300 drop-shadow">
+          🐎 碌波跑馬仔 <span class="text-[11px] font-normal text-yellow-100 hidden md:inline">ROLL-A-BALL DERBY</span>
+        </h1>
+        <span class="bulb"></span>
+      </div>
+
+      <!-- 模式、難易度與風格切換 -->
+      <div class="flex flex-wrap items-center gap-1 text-[11px] sm:text-xs">
+        <!-- 單人/雙人切換 -->
+        <div class="flex bg-black/50 p-0.5 rounded-lg border border-yellow-600/50">
+          <button id="mode1PBtn" onclick="setGameMode('1P')" class="px-2 py-0.5 rounded font-bold bg-yellow-500 text-black transition">👤 單人</button>
+          <button id="mode2PBtn" onclick="setGameMode('2P')" class="px-2 py-0.5 rounded font-bold text-yellow-200 hover:bg-white/10 transition">👥 雙人對戰</button>
+        </div>
+
+        <!-- 難易度切換 -->
+        <div class="flex bg-black/50 p-0.5 rounded-lg border border-yellow-600/50" title="電腦對手速度與準度">
+          <button id="diffEasyBtn" onclick="setDifficulty('easy')" class="px-1.5 py-0.5 rounded font-bold text-yellow-200 hover:bg-white/10 transition">🐢 簡單</button>
+          <button id="diffNormalBtn" onclick="setDifficulty('normal')" class="px-1.5 py-0.5 rounded font-bold bg-emerald-500 text-black transition">🐎 普通</button>
+          <button id="diffHardBtn" onclick="setDifficulty('hard')" class="px-1.5 py-0.5 rounded font-bold text-yellow-200 hover:bg-white/10 transition">🔥 困難</button>
+        </div>
+
+        <!-- 3種主題風格切換 -->
+        <div class="flex bg-black/50 p-0.5 rounded-lg border border-yellow-600/50">
+          <button id="themeRetroBtn" onclick="setTheme('retro')" class="px-1.5 py-0.5 rounded font-bold bg-amber-400 text-black transition">🎪 懷舊</button>
+          <button id="themeNeonBtn" onclick="setTheme('neon')" class="px-1.5 py-0.5 rounded font-bold text-yellow-100 hover:bg-white/10 transition">🌈 霓虹</button>
+          <button id="themeRoyalBtn" onclick="setTheme('royal')" class="px-1.5 py-0.5 rounded font-bold text-yellow-100 hover:bg-white/10 transition">👑 皇家</button>
+        </div>
+
+        <!-- 音效與重開 -->
+        <button id="soundBtn" onclick="toggleSound()" class="px-2 py-0.5 rounded bg-black/50 border border-yellow-500/60 text-yellow-300 font-bold hover:bg-black/80">🔊</button>
+        <button onclick="resetRace()" class="px-2 py-0.5 rounded bg-yellow-500 hover:bg-yellow-400 text-black font-black shadow">🔄 重開</button>
       </div>
     </div>
 
-    <!-- 3種風格主題切換器 -->
-    <div class="flex items-center bg-black/50 p-1 rounded-xl border border-white/15 space-x-1">
-      <button data-theme="classic" class="theme-btn px-2 py-1 rounded-lg text-xs font-bold transition bg-amber-500 text-black shadow">
-        🎪 懷舊
-      </button>
-      <button data-theme="neon" class="theme-btn px-2 py-1 rounded-lg text-xs font-bold transition text-cyan-300 hover:bg-white/10">
-        🌈 霓虹
-      </button>
-      <button data-theme="royal" class="theme-btn px-2 py-1 rounded-lg text-xs font-bold transition text-emerald-300 hover:bg-white/10">
-        👑 皇家
-      </button>
-    </div>
+    <!-- 上半部：賽馬跑道螢幕 -->
+    <div class="relative w-full h-[155px] sm:h-[180px] border-b-4 border-yellow-600 shrink-0 overflow-hidden bg-black">
+      <canvas id="trackCanvas" class="w-full h-full block"></canvas>
 
-    <!-- 單人 / 雙人模式切換器 -->
-    <div class="flex items-center bg-black/50 p-1 rounded-xl border border-amber-400/30 space-x-1">
-      <button id="mode1PBtn" class="px-2.5 py-1 rounded-lg text-xs font-black transition bg-rose-500 text-white shadow">
-        👤 單人挑戰
-      </button>
-      <button id="mode2PBtn" class="px-2.5 py-1 rounded-lg text-xs font-bold transition text-slate-300 hover:bg-white/10">
-        👥 雙人對戰
-      </button>
-    </div>
-    
-    <!-- 遊戲狀態與控制按鈕 -->
-    <div class="flex items-center space-x-1.5 sm:space-x-2">
-      <button id="soundToggleBtn" class="bg-amber-900/60 hover:bg-amber-800 text-amber-200 border border-amber-500/50 rounded-xl px-2.5 py-1.5 text-xs font-bold transition flex items-center gap-1">
-        <span id="soundIcon">🔊</span>
-      </button>
-      <button id="helpBtn" class="bg-blue-900/60 hover:bg-blue-800 text-blue-200 border border-blue-500/50 rounded-xl px-2.5 py-1.5 text-xs font-bold transition">
-        說明
-      </button>
-      <button id="startBtn" class="bg-gradient-to-r from-amber-500 to-red-500 hover:from-amber-400 hover:to-red-400 text-black font-black px-3.5 py-1.5 rounded-xl shadow-lg transform active:scale-95 transition text-xs sm:text-sm">
-        開始賽馬
-      </button>
-    </div>
-  </header>
-
-  <!-- 遊戲主舞台 -->
-  <main class="w-full max-w-4xl flex-1 flex flex-col gap-2 relative">
-    
-    <!-- 上方：跑馬競賽道區 -->
-    <div id="racePanel" class="w-full bg-slate-900/90 rounded-2xl border-2 border-amber-600/60 p-2 sm:p-2.5 shadow-2xl relative overflow-hidden flex flex-col justify-between transition-all duration-500">
-      <div class="flex justify-between items-center px-2 py-0.5 mb-1 border-b border-white/10 text-xs text-amber-300 font-bold tracking-wide">
-        <div class="flex items-center gap-2">
-          <span class="inline-block w-2.5 h-2.5 rounded-full bg-red-500 animate-ping"></span>
-          <span id="raceSubTitle">賽事直播 (經典泥地機械馬道)</span>
+      <!-- 即時領先資訊與步數 -->
+      <div class="absolute top-1.5 left-2 right-2 flex justify-between items-center pointer-events-none text-[11px] sm:text-xs">
+        <div id="scoreHudLeft" class="bg-black/75 border border-yellow-400/70 text-yellow-200 px-2.5 py-0.5 rounded-full font-bold shadow">
+          🔴 1P 進度: <span id="p1StepText" class="arcade-num text-yellow-400 font-black">0</span> / 25 步
         </div>
-        <div id="gameStatusText" class="retro-font text-xs text-yellow-400">WAITING FOR COIN...</div>
-      </div>
-
-      <!-- 賽馬道畫布 (動態渲染4匹馬、終點線、草地跑道) -->
-      <canvas id="raceCanvas" class="w-full h-24 sm:h-32 rounded-xl bg-amber-950/40 border border-amber-900/40 block"></canvas>
-    </div>
-
-    <!-- 下方：經典長距離透視滾球斜坡靶台 -->
-    <div id="boardPanel" class="w-full flex-1 bg-gradient-to-b from-[#3a1a12] via-[#24100c] to-[#120705] rounded-2xl border-4 border-amber-600/80 p-2 sm:p-3 shadow-2xl relative flex flex-col justify-between transition-all duration-500">
-      <!-- 洞口分數快速指示燈 -->
-      <div class="flex justify-around items-center bg-black/40 py-1 px-3 rounded-xl border border-amber-500/30 text-xs sm:text-sm font-black mb-1.5 shrink-0">
-        <div class="flex items-center gap-1 text-yellow-400">
-          <span class="w-3 h-3 rounded-full bg-yellow-400 inline-block shadow-[0_0_8px_#facc15]"></span>
-          <span>黃洞: +1步</span>
+        <div id="statusBanner" class="bg-red-900/90 border border-yellow-400 text-yellow-200 px-3 py-0.5 rounded-full font-black tracking-wide shadow">
+          向上推波開跑！領先衝線奪冠！
         </div>
-        <div class="flex items-center gap-1 text-cyan-400">
-          <span class="w-3 h-3 rounded-full bg-cyan-400 inline-block shadow-[0_0_8px_#22d3ee]"></span>
-          <span>藍洞: +2步</span>
-        </div>
-        <div class="flex items-center gap-1 text-rose-500">
-          <span class="w-3 h-3 rounded-full bg-rose-500 inline-block shadow-[0_0_8px_#f43f5e]"></span>
-          <span>紅心洞: +3步衝刺!</span>
-        </div>
-        <div class="hidden sm:flex items-center gap-1 text-amber-200/80 text-xs font-normal">
-          <span>💡 秘訣：太大力會彈出，啱啱好力先最易落袋！</span>
+        <div id="scoreHudRight" class="bg-black/75 border border-cyan-400/70 text-cyan-200 px-2.5 py-0.5 rounded-full font-bold shadow">
+          🤖 對手最佳: <span id="p2StepText" class="arcade-num text-cyan-300 font-black">0</span> / 25 步
         </div>
       </div>
+    </div>
 
-      <!-- 滾球主操作畫布 (固定明確高度防止 Flex 塌陷黑屏) -->
-      <div id="boardContainer" class="relative w-full h-[350px] sm:h-[410px] rounded-xl overflow-hidden shadow-inner bg-[#14201b] border-2 border-amber-500/80 shrink-0">
-        <canvas id="boardCanvas" class="w-full h-full block cursor-grab active:cursor-grabbing"></canvas>
-        
-        <!-- 雙人分屏中央霓虹分隔欄 (2P 模式顯示) -->
-        <div id="twoPlayerDivider" class="hidden pointer-events-none absolute inset-y-0 left-1/2 -translate-x-1/2 w-1 bg-gradient-to-b from-amber-400 via-yellow-500 to-amber-700 shadow-[0_0_15px_#f59e0b] z-10">
-          <div class="absolute top-2 left-1/2 -translate-x-1/2 bg-black/90 text-amber-300 border border-amber-400 px-2 py-0.5 rounded-full text-[10px] font-black whitespace-nowrap shadow">
-            ⚔️ VS 雙人對決 ⚔️
-          </div>
-        </div>
+    <!-- 下半部：3D 遠近透視長球道區 -->
+    <div id="boardContainer" class="relative w-full flex-1 min-h-[340px] overflow-hidden bg-stone-950">
+      <canvas id="boardCanvas" class="w-full h-full block cursor-grab active:cursor-grabbing"></canvas>
 
-        <!-- 手機及桌面推球提示 -->
-        <div id="dragHint" class="pointer-events-none absolute bottom-14 left-1/2 -translate-x-1/2 bg-black/85 px-4 py-2 rounded-full border border-yellow-400/80 text-xs text-yellow-300 flex items-center gap-2 animate-bounce whitespace-nowrap shadow-lg z-20">
-          <span>👆</span>
-          <span id="dragHintText">按住下方木球向上「碌」上斜台，或向下拉彈射！</span>
-        </div>
-      </div>
-      
-      <!-- 底部即時狀態：推球統計 -->
-      <div class="flex flex-wrap justify-between items-center gap-1 pt-1.5 px-2 text-xs text-amber-200/80 font-bold shrink-0">
-        <div class="flex items-center gap-3">
-          <div>🔴 1P 步數: <span id="playerScore" class="text-rose-400 text-sm font-black">0</span> / 25</div>
-          <div id="p2ScoreBox" class="hidden">🔵 2P 步數: <span id="player2Score" class="text-sky-400 text-sm font-black">0</span> / 25</div>
-        </div>
-        <div id="powerStatus" class="text-amber-300 truncate max-w-xs sm:max-w-md">準備推球：按住畫面直接向上推即可碌波！</div>
-        <div>球槽: <span id="ballReadyText" class="text-emerald-400">雙球連發 ⚡</span></div>
+      <!-- 底部操作說明浮水印 -->
+      <div class="absolute bottom-1 left-0 right-0 text-center pointer-events-none">
+        <span id="controlHint" class="inline-block bg-black/70 text-yellow-200/90 text-[11px] sm:text-xs px-3 py-0.5 rounded-full border border-yellow-500/40">
+          👆 按住下方木球直接「向上推 / 掃」即可碌波！（黃洞 +1步｜藍洞 +2步｜紅心 +3步）
+        </span>
       </div>
     </div>
-  </main>
 
-  <!-- 結算彈窗 (Modal) -->
-  <div id="modalOverlay" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
-    <div class="bg-gradient-to-b from-amber-950 via-slate-900 to-black p-6 rounded-3xl border-4 border-amber-500 max-w-sm w-full text-center shadow-[0_0_40px_rgba(245,158,11,0.5)]">
-      <div id="modalIcon" class="text-6xl mb-2">🏆</div>
-      <h2 id="modalTitle" class="text-2xl font-black text-amber-300 neon-text-gold mb-2">頭馬奪冠！</h2>
-      <p id="modalDesc" class="text-amber-100 text-sm mb-4">你的 1 號馬匹跑出極速，勇奪全場總冠軍！</p>
-      
-      <div class="bg-black/60 rounded-xl p-3 mb-5 border border-white/10 text-left text-xs space-y-1.5">
-        <div class="flex justify-between text-yellow-300">
-          <span>🥇 第一名：</span>
-          <span id="rank1Name">1號 (你)</span>
-        </div>
-        <div class="flex justify-between text-slate-300">
-          <span>🥈 第二名：</span>
-          <span id="rank2Name">3號 迅雷</span>
-        </div>
-        <div class="flex justify-between text-slate-400">
-          <span>🥉 第三名：</span>
-          <span id="rank3Name">2號 追風</span>
-        </div>
-        <div class="flex justify-between text-slate-500">
-          <span>4️⃣ 第四名：</span>
-          <span id="rank4Name">4號 赤兔</span>
-        </div>
+    <!-- 衝線結算彈窗 -->
+    <div id="winModal" class="hidden absolute inset-0 bg-black/80 backdrop-blur-sm z-40 flex flex-col items-center justify-center p-4">
+      <div class="bg-gradient-to-b from-amber-900 via-red-950 to-stone-950 border-4 border-yellow-400 rounded-2xl p-6 max-w-md w-full text-center shadow-2xl">
+        <div id="winEmoji" class="text-5xl mb-2">🏆</div>
+        <h2 id="winTitle" class="text-2xl sm:text-3xl font-black text-yellow-300 mb-1">恭喜奪冠！</h2>
+        <p id="winDesc" class="text-sm sm:text-base text-yellow-100/90 mb-4">你的賽馬率先衝過終點線！</p>
+        <div id="rankList" class="bg-black/50 rounded-xl p-3 mb-5 text-left text-xs sm:text-sm space-y-1.5 border border-yellow-500/30 text-yellow-100"></div>
+        <button onclick="resetRace()" class="w-full py-3 rounded-xl bg-gradient-to-r from-yellow-400 via-amber-500 to-yellow-400 text-black font-black text-base sm:text-lg shadow-lg hover:brightness-110 active:scale-95 transition">
+          🏇 再玩一局！
+        </button>
       </div>
-
-      <button id="modalActionBtn" class="w-full py-3 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-black font-black text-base rounded-xl shadow-lg transform active:scale-95 transition">
-        再來一局 (投幣) 🪙
-      </button>
     </div>
+
   </div>
 
-  <!-- 說明彈窗 -->
-  <div id="helpModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
-    <div class="bg-gradient-to-b from-slate-900 to-slate-950 p-6 rounded-2xl border-2 border-blue-400 max-w-md w-full shadow-2xl">
-      <div class="flex justify-between items-center mb-3 border-b border-white/10 pb-2">
-        <h3 class="text-lg font-bold text-cyan-300 flex items-center gap-2">
-          <span>🎡</span> 嘉年華滾球跑馬機 規則
-        </h3>
-        <button id="closeHelpBtn" class="text-slate-400 hover:text-white text-xl">✕</button>
-      </div>
-      <div class="text-sm text-slate-200 space-y-3">
-        <p>1. 這是一座還原冒險樂園／荔園真實比例的<strong>長斜台賽馬滾球機</strong>，支援 <strong>單人挑戰</strong> 與 <strong>雙人同屏對決</strong>！</p>
-        <p>2. <strong>真實長球道手感：</strong>
-          <br>• <strong>向上快速滑動（Flick）</strong>：直接喺底部拎起個波向上「碌」出去！
-          <br>• <strong>向下拉彈弓（Slingshot）</strong>：按住木球向下拉，睇住力度條放手。
-          <br>• <strong>👥 雙人模式操作</strong>：畫面分成左(1P)、右(2P)兩個球台，支援<strong>雙人同時觸控碌波</strong>！如果在電腦玩，亦可使用鍵盤：<strong>1P 按 [A/D] 移動 + [W] 發球</strong>；<strong>2P 按 [⬅️/➡️] 移動 + [⬆️] 發球</strong>！
-        </p>
-        <p>3. <strong>物理斜坡與洞邊反彈：</strong>
-          <br>• 球道有真實斜坡重力，太細力個波會半路溜返落嚟；太大力撞到洞口邊緣會彈開，<strong>趁個波喺頂端慢落嚟嗰下最易入洞！</strong>
-        </p>
-        <p>4. <strong>得分機制：</strong><span class="text-yellow-400 font-bold">黃洞 +1步</span>、<span class="text-cyan-400 font-bold">藍洞 +2步</span>、<span class="text-rose-400 font-bold">紅心洞 +3步</span>！率先跑完 25 步奪冠！</p>
-      </div>
-      <button id="closeHelpBtn2" class="mt-5 w-full py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl">
-        知道了，開始碌波！
-      </button>
-    </div>
-  </div>
+<script>
+// ==================== 音效引擎 (Web Audio API) ====================
+let audioCtx = null;
+let soundEnabled = true;
 
-  <script>
-    /* =================================================================
-       1. 簡易音效引擎 (Web Audio API - 無需外部素材)
-       ================================================================= */
-    class SoundEngine {
-      constructor() {
-        this.ctx = null;
-        this.enabled = true;
-      }
+function initAudio() {
+  if (!audioCtx) {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (AudioContext) audioCtx = new AudioContext();
+  }
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+}
 
-      init() {
-        if (!this.ctx) {
-          const AudioContext = window.AudioContext || window.webkitAudioContext;
-          this.ctx = new AudioContext();
-        }
-        if (this.ctx.state === 'suspended') {
-          this.ctx.resume();
-        }
-      }
+function toggleSound() {
+  soundEnabled = !soundEnabled;
+  document.getElementById('soundBtn').textContent = soundEnabled ? '🔊' : '🔇';
+}
 
-      playLaunch() {
-        if (!this.enabled) return;
-        this.init();
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(140, this.ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(320, this.ctx.currentTime + 0.15);
-        gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.15);
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start();
-        osc.stop(this.ctx.currentTime + 0.16);
-      }
+function playRollSound(speedRatio = 0.6) {
+  if (!soundEnabled) return;
+  initAudio();
+  if (!audioCtx) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = 'triangle';
+  const now = audioCtx.currentTime;
+  osc.frequency.setValueAtTime(110 + speedRatio * 70, now);
+  osc.frequency.exponentialRampToValueAtTime(55, now + 0.16);
+  gain.gain.setValueAtTime(0.14, now);
+  gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start(now);
+  osc.stop(now + 0.17);
+}
 
-      playBounce() {
-        if (!this.enabled) return;
-        this.init();
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(350, this.ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(180, this.ctx.currentTime + 0.08);
-        gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start();
-        osc.stop(this.ctx.currentTime + 0.09);
-      }
+function playBumpSound() {
+  if (!soundEnabled) return;
+  initAudio();
+  if (!audioCtx) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = 'sine';
+  const now = audioCtx.currentTime;
+  osc.frequency.setValueAtTime(240, now);
+  osc.frequency.exponentialRampToValueAtTime(90, now + 0.06);
+  gain.gain.setValueAtTime(0.12, now);
+  gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start(now);
+  osc.stop(now + 0.07);
+}
 
-      playHole(points) {
-        if (!this.enabled) return;
-        this.init();
-        const freqs = points === 3 ? [523.25, 659.25, 783.99, 1046.50] : (points === 2 ? [440, 554.37, 659.25] : [349.23, 440]);
-        freqs.forEach((freq, idx) => {
-          const osc = this.ctx.createOscillator();
-          const gain = this.ctx.createGain();
-          osc.type = 'square';
-          osc.frequency.setValueAtTime(freq, this.ctx.currentTime + idx * 0.07);
-          gain.gain.setValueAtTime(0.18, this.ctx.currentTime + idx * 0.07);
-          gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + idx * 0.07 + 0.18);
-          osc.connect(gain);
-          gain.connect(this.ctx.destination);
-          osc.start(this.ctx.currentTime + idx * 0.07);
-          osc.stop(this.ctx.currentTime + idx * 0.07 + 0.2);
-        });
-      }
+function playScoreSound(pts) {
+  if (!soundEnabled) return;
+  initAudio();
+  if (!audioCtx) return;
+  const now = audioCtx.currentTime;
+  const notes = pts === 3 ? [523.25, 659.25, 783.99, 1046.5] : (pts === 2 ? [440, 554.37, 659.25] : [392, 523.25]);
+  notes.forEach((freq, idx) => {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(freq, now + idx * 0.065);
+    gain.gain.setValueAtTime(0.2, now + idx * 0.065);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.065 + 0.18);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(now + idx * 0.065);
+    osc.stop(now + idx * 0.065 + 0.19);
+  });
+}
 
-      playGallop() {
-        if (!this.enabled) return;
-        this.init();
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(90, this.ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(40, this.ctx.currentTime + 0.05);
-        gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.05);
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start();
-        osc.stop(this.ctx.currentTime + 0.06);
-      }
+function playFanfare(win = true) {
+  if (!soundEnabled) return;
+  initAudio();
+  if (!audioCtx) return;
+  const now = audioCtx.currentTime;
+  const melody = win ? [523.25, 659.25, 783.99, 1046.5, 783.99, 1046.5] : [392, 349.23, 329.63, 261.63];
+  melody.forEach((freq, idx) => {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(freq, now + idx * 0.12);
+    gain.gain.setValueAtTime(0.16, now + idx * 0.12);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.12 + 0.22);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(now + idx * 0.12);
+    osc.stop(now + idx * 0.12 + 0.24);
+  });
+}
 
-      playCheer() {
-        if (!this.enabled) return;
-        this.init();
-        const now = this.ctx.currentTime;
-        [261.63, 329.63, 392.00, 523.25, 659.25, 783.99].forEach((freq, i) => {
-          const osc = this.ctx.createOscillator();
-          const gain = this.ctx.createGain();
-          osc.type = 'triangle';
-          osc.frequency.setValueAtTime(freq, now + i * 0.1);
-          gain.gain.setValueAtTime(0.25, now + i * 0.1);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.1 + 0.35);
-          osc.connect(gain);
-          gain.connect(this.ctx.destination);
-          osc.start(now + i * 0.1);
-          osc.stop(now + i * 0.1 + 0.36);
-        });
-      }
-    }
+// ==================== 3 大主題風格設定 ====================
+const THEMES = {
+  retro: {
+    name: '懷舊嘉年華',
+    skyTop: '#1e3a5f',
+    skyBottom: '#f59e0b',
+    turfTop: '#78350f',
+    turfBottom: '#451a03',
+    laneLine: 'rgba(253, 224, 71, 0.35)',
+    fenceColor: '#fef3c7',
+    woodDark: '#2a1205',
+    woodMid: '#6b3410',
+    woodLight: '#9a4e1c',
+    headFeltTop: '#064e3b',
+    headFeltBottom: '#022c22',
+    railColor: '#d97706',
+    railHighlight: '#fde047',
+    ballColors: [
+      { hi: '#fffbeb', mid: '#f59e0b', lo: '#78350f' },
+      { hi: '#fecaca', mid: '#dc2626', lo: '#450a0a' }
+    ]
+  },
+  neon: {
+    name: '霓虹街機',
+    skyTop: '#090014',
+    skyBottom: '#2e1065',
+    turfTop: '#0f172a',
+    turfBottom: '#020617',
+    laneLine: 'rgba(34, 211, 238, 0.45)',
+    fenceColor: '#22d3ee',
+    woodDark: '#090414',
+    woodMid: '#1e1b4b',
+    woodLight: '#312e81',
+    headFeltTop: '#3b0764',
+    headFeltBottom: '#1e0536',
+    railColor: '#ec4899',
+    railHighlight: '#22d3ee',
+    ballColors: [
+      { hi: '#ecfeff', mid: '#06b6d4', lo: '#164e63' },
+      { hi: '#fdf2f8', mid: '#ec4899', lo: '#831843' }
+    ]
+  },
+  royal: {
+    name: '皇家草地',
+    skyTop: '#0284c7',
+    skyBottom: '#bae6fd',
+    turfTop: '#15803d',
+    turfBottom: '#14532d',
+    laneLine: 'rgba(255, 255, 255, 0.35)',
+    fenceColor: '#ffffff',
+    woodDark: '#1c1917',
+    woodMid: '#44403c',
+    woodLight: '#57534e',
+    headFeltTop: '#166534',
+    headFeltBottom: '#052e16',
+    railColor: '#eab308',
+    railHighlight: '#fef08a',
+    ballColors: [
+      { hi: '#ffffff', mid: '#e2e8f0', lo: '#475569' },
+      { hi: '#fef9c3', mid: '#eab308', lo: '#713f12' }
+    ]
+  }
+};
 
-    const sound = new SoundEngine();
+// ==================== 難易度設定 ====================
+const DIFFICULTIES = {
+  easy: {
+    name: '簡單',
+    minDelay: 5.0,   // 最快 5 秒碌一球
+    maxDelay: 7.0,   // 最慢 7 秒碌一球
+    missRate: 0.55,  // 55% 唔入洞
+    twoPtChance: 0.25,
+    threePtChance: 0.04
+  },
+  normal: {
+    name: '普通',
+    minDelay: 3.3,
+    maxDelay: 4.8,
+    missRate: 0.38,  // 38% 唔入洞
+    twoPtChance: 0.32,
+    threePtChance: 0.08
+  },
+  hard: {
+    name: '困難',
+    minDelay: 2.1,
+    maxDelay: 3.3,
+    missRate: 0.18,  // 只有 18% 唔入洞
+    twoPtChance: 0.42,
+    threePtChance: 0.16
+  }
+};
 
-    /* =================================================================
-       1.5 主題風格配置系統 (3 大主題：懷舊荔園 / 霓虹街機 / 皇家草地)
-       ================================================================= */
-    const THEMES = {
-      classic: {
-        name: '懷舊荔園滾球跑馬機',
-        logo: '🎪',
-        subTitle: '賽事直播 (經典紅金泥地機械馬道)',
-        bodyBg: 'radial-gradient(circle at 50% 20%, #1e1136 0%, #0d0718 100%)',
-        headerClass: 'w-full max-w-4xl flex flex-wrap items-center justify-between gap-2 px-3 sm:px-4 py-2 bg-gradient-to-r from-red-950/85 via-amber-950/85 to-red-950/85 rounded-2xl border-2 border-amber-500/60 shadow-lg backdrop-blur mb-1.5 transition-all duration-500',
-        racePanelBorder: '#d97706',
-        boardPanelBg: 'linear-gradient(to bottom, #3a1a12, #24100c, #120705)',
-        boardPanelBorder: '#d97706',
-        trackEven: '#451e12',
-        trackOdd: '#3d1a0e',
-        trackLine: 'rgba(255, 255, 255, 0.15)',
-        finishA: '#ffffff',
-        finishB: '#000000',
-        outerBg: '#090d0b',
-        laneStops: ['#12221b', '#1e372d', '#5c3419', '#3b200e', '#261409'],
-        plankLine: 'rgba(255, 200, 120, 0.08)',
-        arrowColor: 'rgba(250, 204, 21, 0.22)',
-        rampLip: '#d97706',
-        railFill: '#78350f',
-        railStroke: '#f59e0b',
-        archFill: '#451a03',
-        holeRimBg: '#070709',
-        holeWall: '#29170b',
-        pegFill: '#fbbf24',
-        pegGlow: '#f59e0b',
-        holeColors: { 1: '#facc15', 2: '#38bdf8', 3: '#f43f5e' },
-        ball0: ['#ffffff', '#fef08a', '#d97706', '#78350f'], // 象牙木球
-        ball1: ['#ffe4e6', '#fda4af', '#e11d48', '#4c0519'], // 紅檀木球
-        horses: [
-          { horseColor: '#78350f', saddle: '#dc2626', badge: '#ef4444' },
-          { horseColor: '#451a03', saddle: '#2563eb', badge: '#3b82f6' },
-          { horseColor: '#92400e', saddle: '#ca8a04', badge: '#eab308' },
-          { horseColor: '#292524', saddle: '#059669', badge: '#10b981' }
-        ]
-      },
-      neon: {
-        name: '冒險樂園霓虹電音機台',
-        logo: '🌈',
-        subTitle: 'CYBER DERBY LIVE (霓虹光速賽馬道)',
-        bodyBg: 'radial-gradient(circle at 50% 20%, #090d26 0%, #02030a 100%)',
-        headerClass: 'w-full max-w-4xl flex flex-wrap items-center justify-between gap-2 px-3 sm:px-4 py-2 bg-gradient-to-r from-indigo-950/90 via-purple-950/90 to-slate-950/90 rounded-2xl border-2 border-cyan-400/70 shadow-[0_0_20px_rgba(34,211,238,0.3)] backdrop-blur mb-1.5 transition-all duration-500',
-        racePanelBorder: '#06b6d4',
-        boardPanelBg: 'linear-gradient(to bottom, #0f172a, #090d16, #030712)',
-        boardPanelBorder: '#a855f7',
-        trackEven: '#0f172a',
-        trackOdd: '#1e1b4b',
-        trackLine: 'rgba(34, 211, 238, 0.35)',
-        finishA: '#22d3ee',
-        finishB: '#ec4899',
-        outerBg: '#03050c',
-        laneStops: ['#1e1b4b', '#2e1065', '#06b6d4', '#0f172a', '#030712'],
-        plankLine: 'rgba(56, 189, 248, 0.14)',
-        arrowColor: 'rgba(236, 72, 153, 0.35)',
-        rampLip: '#22d3ee',
-        railFill: '#3b0764',
-        railStroke: '#ec4899',
-        archFill: '#1e1b4b',
-        holeRimBg: '#020617',
-        holeWall: '#1e1b4b',
-        pegFill: '#22d3ee',
-        pegGlow: '#06b6d4',
-        holeColors: { 1: '#a3e635', 2: '#00f5d4', 3: '#ff007f' },
-        ball0: ['#ffffff', '#a5f3fc', '#06b6d4', '#083344'], // 電光青能量球
-        ball1: ['#ffffff', '#f5d0fe', '#d946ef', '#4a044e'], // 霓虹紫激光球
-        horses: [
-          { horseColor: '#f43f5e', saddle: '#22d3ee', badge: '#ec4899' },
-          { horseColor: '#38bdf8', saddle: '#facc15', badge: '#06b6d4' },
-          { horseColor: '#a855f7', saddle: '#4ade80', badge: '#9333ea' },
-          { horseColor: '#2dd4bf', saddle: '#f472b6', badge: '#14b8a6' }
-        ]
-      },
-      royal: {
-        name: '皇家馬會草地打吡大賽',
-        logo: '👑',
-        subTitle: 'ROYAL TURF CLUB (皇家翠綠草地賽道)',
-        bodyBg: 'radial-gradient(circle at 50% 20%, #062c1e 0%, #02120b 100%)',
-        headerClass: 'w-full max-w-4xl flex flex-wrap items-center justify-between gap-2 px-3 sm:px-4 py-2 bg-gradient-to-r from-emerald-950/90 via-teal-950/90 to-emerald-950/90 rounded-2xl border-2 border-yellow-400/75 shadow-[0_0_20px_rgba(250,204,21,0.25)] backdrop-blur mb-1.5 transition-all duration-500',
-        racePanelBorder: '#eab308',
-        boardPanelBg: 'linear-gradient(to bottom, #143326, #0b2118, #05120c)',
-        boardPanelBorder: '#eab308',
-        trackEven: '#15803d',
-        trackOdd: '#166534',
-        trackLine: 'rgba(255, 255, 255, 0.45)',
-        finishA: '#fef08a',
-        finishB: '#14532d',
-        outerBg: '#04120c',
-        laneStops: ['#064e3b', '#047857', '#d4af37', '#451a03', '#271004'],
-        plankLine: 'rgba(254, 240, 138, 0.1)',
-        arrowColor: 'rgba(254, 240, 138, 0.28)',
-        rampLip: '#facc15',
-        railFill: '#f8fafc', // 皇家白色欄杆
-        railStroke: '#eab308',
-        archFill: '#064e3b',
-        holeRimBg: '#022c22',
-        holeWall: '#3f2e18',
-        pegFill: '#fef08a',
-        pegGlow: '#eab308',
-        holeColors: { 1: '#fde047', 2: '#7dd3fc', 3: '#fb7185' },
-        ball0: ['#ffffff', '#f8fafc', '#cbd5e1', '#475569'], // 純白珍珠雲石球
-        ball1: ['#ffffff', '#fef08a', '#eab308', '#713f12'], // 皇家純金球
-        horses: [
-          { horseColor: '#f8fafc', saddle: '#dc2626', badge: '#b91c1c' }, // 皇家白馬
-          { horseColor: '#78350f', saddle: '#0284c7', badge: '#0369a1' }, // 純種棗紅馬
-          { horseColor: '#d97706', saddle: '#7c3aed', badge: '#6d28d9' }, // 金栗色名駒
-          { horseColor: '#1c1917', saddle: '#eab308', badge: '#ca8a04' }  // 皇家黑駿馬
-        ]
-      }
-    };
+let currentThemeKey = 'retro';
+let gameMode = '1P'; // '1P' or '2P'
+let currentDifficulty = 'normal'; // 'easy' | 'normal' | 'hard'
+const TARGET_STEPS = 25;
 
-    let currentThemeKey = 'classic';
-    let currentTheme = THEMES.classic;
+// ==================== 賽馬資料 ====================
+const horses = [
+  { id: 0, name: '1P 赤兔號', badge: '1P', color: '#ef4444', coat: '#b91c1c', mane: '#fef08a', steps: 0, displaySteps: 0, isPlayer: true, aiTimer: 0, nextAiRoll: 3.5, stride: 0 },
+  { id: 1, name: '2P 藍電號', badge: 'CPU', color: '#38bdf8', coat: '#0284c7', mane: '#e0f2fe', steps: 0, displaySteps: 0, isPlayer: false, aiTimer: 0, nextAiRoll: 3.8, stride: 1.5 },
+  { id: 2, name: '金威號', badge: 'CPU', color: '#facc15', coat: '#d97706', mane: '#fef9c3', steps: 0, displaySteps: 0, isPlayer: false, aiTimer: 0, nextAiRoll: 4.1, stride: 3.0 },
+  { id: 3, name: '翡翠號', badge: 'CPU', color: '#4ade80', coat: '#15803d', mane: '#dcfce7', steps: 0, displaySteps: 0, isPlayer: false, aiTimer: 0, nextAiRoll: 3.6, stride: 4.5 }
+];
 
-    function applyTheme(themeKey) {
-      if (!THEMES[themeKey]) return;
-      currentThemeKey = themeKey;
-      currentTheme = THEMES[themeKey];
+let raceStarted = false;
+let raceFinished = false;
+let finishOrder = [];
 
-      // 更新 HTML 外觀與頂部標題
-      document.getElementById('appBody').style.background = currentTheme.bodyBg;
-      document.getElementById('appHeader').className = currentTheme.headerClass;
-      document.getElementById('themeLogo').innerText = currentTheme.logo;
-      document.getElementById('themeTitle').innerText = currentTheme.name;
-      document.getElementById('raceSubTitle').innerText = currentTheme.subTitle;
+// ==================== 頂端三角蜂窩計分洞與緩衝釘 ====================
+// 世界座標：wx (-1 ~ 1), wy (0 為底部發球端 ~ 1 為頂端靶區)
+const holes = [
+  // 最頂排 (1分黃洞 x3)
+  { wx: -0.52, wy: 0.90, r: 0.088, pts: 1, color: '#facc15', ring: '#fef08a', label: '1' },
+  { wx:  0.00, wy: 0.92, r: 0.088, pts: 1, color: '#facc15', ring: '#fef08a', label: '1' },
+  { wx:  0.52, wy: 0.90, r: 0.088, pts: 1, color: '#facc15', ring: '#fef08a', label: '1' },
+  // 第二排 (2分藍洞 x2 + 正中3分紅心大獎洞)
+  { wx: -0.44, wy: 0.77, r: 0.086, pts: 2, color: '#38bdf8', ring: '#bae6fd', label: '2' },
+  { wx:  0.00, wy: 0.78, r: 0.082, pts: 3, color: '#ef4444', ring: '#fca5a5', label: '3' },
+  { wx:  0.44, wy: 0.77, r: 0.086, pts: 2, color: '#38bdf8', ring: '#bae6fd', label: '2' },
+  // 第三排 (2分藍洞 x2)
+  { wx: -0.25, wy: 0.66, r: 0.085, pts: 2, color: '#38bdf8', ring: '#bae6fd', label: '2' },
+  { wx:  0.25, wy: 0.66, r: 0.085, pts: 2, color: '#38bdf8', ring: '#bae6fd', label: '2' },
+  // 前排 (1分黃洞 x3)
+  { wx: -0.54, wy: 0.56, r: 0.088, pts: 1, color: '#facc15', ring: '#fef08a', label: '1' },
+  { wx:  0.00, wy: 0.55, r: 0.088, pts: 1, color: '#facc15', ring: '#fef08a', label: '1' },
+  { wx:  0.54, wy: 0.56, r: 0.088, pts: 1, color: '#facc15', ring: '#fef08a', label: '1' }
+];
 
-      const racePanel = document.getElementById('racePanel');
-      racePanel.style.borderColor = currentTheme.racePanelBorder;
+const bumpers = [
+  { wx: -0.26, wy: 0.84, r: 0.022 },
+  { wx:  0.26, wy: 0.84, r: 0.022 },
+  { wx: -0.24, wy: 0.60, r: 0.022 },
+  { wx:  0.24, wy: 0.60, r: 0.022 }
+];
 
-      const boardPanel = document.getElementById('boardPanel');
-      boardPanel.style.background = currentTheme.boardPanelBg;
-      boardPanel.style.borderColor = currentTheme.boardPanelBorder;
+// ==================== 球道與滾球狀態 ====================
+let lanes = [];
+const activePointers = new Map(); // pointerId -> { laneIdx, ball, startX, startY, curX, curY, lastX, lastY, lastTime }
 
-      // 更新馬匹外觀配色
-      HORSES.forEach((h, idx) => {
-        h.horseColor = currentTheme.horses[idx].horseColor;
-        h.saddle = currentTheme.horses[idx].saddle;
-        h.color = currentTheme.horses[idx].badge;
-      });
+function createLane(laneIndex, horseIndex, title, accentColor) {
+  return {
+    laneIndex,
+    horseIndex,
+    title,
+    accentColor,
+    aimX: 0,
+    balls: [
+      { id: 0, homeWx: -0.24, homeWy: 0.09, wx: -0.24, wy: 0.09, vx: 0, vy: 0, r: 0.068, state: 'ready', colorIdx: 0, sinkTimer: 0, targetHole: null, trail: [] },
+      { id: 1, homeWx:  0.24, homeWy: 0.09, wx:  0.24, wy: 0.09, vx: 0, vy: 0, r: 0.068, state: 'ready', colorIdx: 1, sinkTimer: 0, targetHole: null, trail: [] }
+    ],
+    popups: [],
+    holeFlash: []
+  };
+}
 
-      // 更新洞口燈光顏色
-      holes.forEach(h => {
-        h.color = currentTheme.holeColors[h.points] || '#facc15';
-      });
+function getNextAiDelay() {
+  const diff = DIFFICULTIES[currentDifficulty];
+  return diff.minDelay + Math.random() * (diff.maxDelay - diff.minDelay);
+}
 
-      // 更新主題按鈕高亮狀態
-      document.querySelectorAll('.theme-btn').forEach(btn => {
-        const key = btn.getAttribute('data-theme');
-        if (key === themeKey) {
-          btn.className = 'theme-btn px-2 py-1 rounded-lg text-xs font-black transition bg-amber-400 text-black shadow-md scale-105';
-        } else {
-          btn.className = 'theme-btn px-2 py-1 rounded-lg text-xs font-bold transition text-slate-200 hover:bg-white/10';
-        }
-      });
-    }
-
-    /* =================================================================
-       2. 跑馬區 (Race Tracker) 模擬系統 (支援 1P 及 2P 雙人模式)
-       ================================================================= */
-    const raceCanvas = document.getElementById('raceCanvas');
-    const rCtx = raceCanvas.getContext('2d');
-
-    const boardCanvas = document.getElementById('boardCanvas');
-    const bCtx = boardCanvas.getContext('2d');
-
-    let isTwoPlayer = false; // 是否處於雙人同屏模式
-
-    // 馬匹定義 (加入 playerIndex: 0=1P, 1=2P, null=AI)
-    const HORSES = [
-      { id: 1, name: '1號 幸運星 (1P)', color: '#ef4444', horseColor: '#78350f', saddle: '#dc2626', score: 0, progress: 0, targetProgress: 0, isPlayer: true, playerIndex: 0, legAngle: 0, aiCooldown: 0 },
-      { id: 2, name: '2號 追風箭',      color: '#3b82f6', horseColor: '#451a03', saddle: '#2563eb', score: 0, progress: 0, targetProgress: 0, isPlayer: false, playerIndex: null, legAngle: 0, aiCooldown: 140 },
-      { id: 3, name: '3號 疾風旋風',    color: '#eab308', horseColor: '#92400e', saddle: '#ca8a04', score: 0, progress: 0, targetProgress: 0, isPlayer: false, playerIndex: null, legAngle: 0, aiCooldown: 190 },
-      { id: 4, name: '4號 赤兔天馬',    color: '#10b981', horseColor: '#292524', saddle: '#059669', score: 0, progress: 0, targetProgress: 0, isPlayer: false, playerIndex: null, legAngle: 0, aiCooldown: 165 },
+function setupLanes() {
+  activePointers.clear();
+  if (gameMode === '1P') {
+    horses[1].isPlayer = false;
+    horses[1].badge = 'CPU';
+    horses[1].name = '藍電號';
+    lanes = [createLane(0, 0, '1P 赤兔號球道', '#ef4444')];
+    document.getElementById('scoreHudRight').innerHTML = `🤖 對手最佳: <span id="p2StepText" class="arcade-num text-cyan-300 font-black">0</span> / ${TARGET_STEPS} 步`;
+    document.getElementById('controlHint').textContent = '👆 按住下方木球直接「向上推 / 掃」即可碌波！（黃洞 +1步｜藍洞 +2步｜紅心 +3步）';
+  } else {
+    horses[1].isPlayer = true;
+    horses[1].badge = '2P';
+    horses[1].name = '2P 藍電號';
+    lanes = [
+      createLane(0, 0, '🔴 1P 赤兔號 (左道)', '#ef4444'),
+      createLane(1, 1, '🔵 2P 藍電號 (右道)', '#38bdf8')
     ];
+    document.getElementById('scoreHudRight').innerHTML = `🔵 2P 進度: <span id="p2StepText" class="arcade-num text-cyan-300 font-black">0</span> / ${TARGET_STEPS} 步`;
+    document.getElementById('controlHint').textContent = '👥 雙人同屏：左右兩邊可同時用手指向上推波！（或鍵盤 1P: A/D/W ｜ 2P: ⬅️/➡️/⬆️）';
+  }
+}
 
-    const GOAL_DISTANCE = 100; // 達到 100% 即贏 (每 1 分 = 前進 4%，即滿 25 分衝線)
-    const STEP_PERCENT = 4;    // 每 1 步對應 4% 賽道距離
-    let isGameRunning = false;
-    let gameEnded = false;
-    let gallopTimer = 0;
+function setGameMode(mode) {
+  gameMode = mode;
+  document.getElementById('mode1PBtn').className = mode === '1P'
+    ? 'px-2 py-0.5 rounded font-bold bg-yellow-500 text-black transition'
+    : 'px-2 py-0.5 rounded font-bold text-yellow-200 hover:bg-white/10 transition';
+  document.getElementById('mode2PBtn').className = mode === '2P'
+    ? 'px-2 py-0.5 rounded font-bold bg-cyan-400 text-black transition'
+    : 'px-2 py-0.5 rounded font-bold text-yellow-200 hover:bg-white/10 transition';
+  resetRace();
+}
 
-    function setPlayerMode(twoPlayer) {
-      isTwoPlayer = twoPlayer;
-      const m1Btn = document.getElementById('mode1PBtn');
-      const m2Btn = document.getElementById('mode2PBtn');
-      const divider = document.getElementById('twoPlayerDivider');
-      const p2Box = document.getElementById('p2ScoreBox');
-      const hintText = document.getElementById('dragHintText');
+function setDifficulty(diff) {
+  currentDifficulty = diff;
+  document.getElementById('diffEasyBtn').className = diff === 'easy'
+    ? 'px-1.5 py-0.5 rounded font-bold bg-emerald-400 text-black transition'
+    : 'px-1.5 py-0.5 rounded font-bold text-yellow-200 hover:bg-white/10 transition';
+  document.getElementById('diffNormalBtn').className = diff === 'normal'
+    ? 'px-1.5 py-0.5 rounded font-bold bg-emerald-400 text-black transition'
+    : 'px-1.5 py-0.5 rounded font-bold text-yellow-200 hover:bg-white/10 transition';
+  document.getElementById('diffHardBtn').className = diff === 'hard'
+    ? 'px-1.5 py-0.5 rounded font-bold bg-rose-500 text-white transition'
+    : 'px-1.5 py-0.5 rounded font-bold text-yellow-200 hover:bg-white/10 transition';
 
-      if (isTwoPlayer) {
-        HORSES[0].name = '1號 紅蓮星 (1P)';
-        HORSES[1].name = '2號 藍電箭 (2P)';
-        HORSES[1].isPlayer = true;
-        HORSES[1].playerIndex = 1;
+  // 即時更新現有電腦馬匹的冷卻時間
+  horses.forEach(h => {
+    if (!h.isPlayer) h.nextAiRoll = getNextAiDelay();
+  });
 
-        m2Btn.className = 'px-2.5 py-1 rounded-lg text-xs font-black transition bg-sky-500 text-black shadow scale-105';
-        m1Btn.className = 'px-2.5 py-1 rounded-lg text-xs font-bold transition text-slate-300 hover:bg-white/10';
-        divider.classList.remove('hidden');
-        p2Box.classList.remove('hidden');
-        hintText.innerText = '左右分屏對決！兩位玩家可同時向上「碌波」，或用鍵盤 W / ⬆️ 發球！';
-      } else {
-        HORSES[0].name = '1號 幸運星 (你)';
-        HORSES[1].name = '2號 追風箭';
-        HORSES[1].isPlayer = false;
-        HORSES[1].playerIndex = null;
+  if (!raceStarted && !raceFinished) {
+    document.getElementById('statusBanner').textContent = `難度：${DIFFICULTIES[diff].name}｜向上推波開跑！`;
+  }
+}
 
-        m1Btn.className = 'px-2.5 py-1 rounded-lg text-xs font-black transition bg-rose-500 text-white shadow scale-105';
-        m2Btn.className = 'px-2.5 py-1 rounded-lg text-xs font-bold transition text-slate-300 hover:bg-white/10';
-        divider.classList.add('hidden');
-        p2Box.classList.add('hidden');
-        hintText.innerText = '按住下方木球向上「碌」上斜台，或向下拉彈射！';
-      }
-
-      resizeBoardCanvas();
-      initBalls();
-      startGame();
+function setTheme(themeKey) {
+  currentThemeKey = themeKey;
+  ['retro', 'neon', 'royal'].forEach(k => {
+    const btn = document.getElementById('theme' + k.charAt(0).toUpperCase() + k.slice(1) + 'Btn');
+    if (k === themeKey) {
+      btn.className = 'px-1.5 py-0.5 rounded font-bold bg-amber-400 text-black transition';
+    } else {
+      btn.className = 'px-1.5 py-0.5 rounded font-bold text-yellow-100 hover:bg-white/10 transition';
     }
+  });
+}
 
-    function resizeRaceCanvas() {
-      const dpr = window.devicePixelRatio || 1;
-      const rect = raceCanvas.getBoundingClientRect();
-      const w = Math.max(300, rect.width);
-      const h = Math.max(85, rect.height);
-      raceCanvas.width = w * dpr;
-      raceCanvas.height = h * dpr;
+function resetRace() {
+  raceStarted = false;
+  raceFinished = false;
+  finishOrder = [];
+  document.getElementById('winModal').classList.add('hidden');
+  document.getElementById('statusBanner').textContent = `難度：${DIFFICULTIES[currentDifficulty].name}｜向上推波開跑！`;
+  setupLanes();
+  horses.forEach((h, i) => {
+    h.steps = 0;
+    h.displaySteps = 0;
+    h.aiTimer = 0;
+    h.nextAiRoll = getNextAiDelay();
+    h.stride = i * 1.4;
+  });
+  updateHud();
+}
+
+function updateHud() {
+  const p1El = document.getElementById('p1StepText');
+  const p2El = document.getElementById('p2StepText');
+  if (p1El) p1El.textContent = Math.min(TARGET_STEPS, horses[0].steps);
+  if (p2El) {
+    if (gameMode === '2P') {
+      p2El.textContent = Math.min(TARGET_STEPS, horses[1].steps);
+    } else {
+      const bestCpu = Math.max(horses[1].steps, horses[2].steps, horses[3].steps);
+      p2El.textContent = Math.min(TARGET_STEPS, bestCpu);
     }
+  }
+}
 
-    // 繪製賽馬道與馬匹動畫
-    function drawRaceTracks() {
-      const dpr = window.devicePixelRatio || 1;
-      const w = raceCanvas.width;
-      const h = raceCanvas.height;
-      if (w <= 0 || h <= 0) return;
-      rCtx.clearRect(0, 0, w, h);
+// ==================== 畫布與 3D 透視座標轉換 ====================
+const trackCanvas = document.getElementById('trackCanvas');
+const trackCtx = trackCanvas.getContext('2d');
+const boardCanvas = document.getElementById('boardCanvas');
+const boardCtx = boardCanvas.getContext('2d');
 
-      const trackCount = HORSES.length;
-      const trackHeight = h / trackCount;
-      const startX = 60 * dpr;
-      const finishX = w - (40 * dpr);
-      const playableLength = Math.max(50, finishX - startX);
+let tWidth = 800, tHeight = 175;
+let bWidth = 800, bHeight = 420;
 
-      // 跑道背景紋理 (根據當前風格切換：泥地 / 霓虹賽道 / 皇家草地)
-      for (let i = 0; i < trackCount; i++) {
-        const y = i * trackHeight;
-        
-        // 跑道底色相間
-        rCtx.fillStyle = (i % 2 === 0) ? currentTheme.trackEven : currentTheme.trackOdd;
-        rCtx.fillRect(0, y, w, trackHeight);
+function resizeCanvases() {
+  const dpr = window.devicePixelRatio || 1;
+  const tRect = trackCanvas.parentElement.getBoundingClientRect();
+  tWidth = Math.max(300, tRect.width);
+  tHeight = Math.max(130, tRect.height);
+  trackCanvas.width = tWidth * dpr;
+  trackCanvas.height = tHeight * dpr;
+  trackCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-        // 跑道標線
-        rCtx.strokeStyle = currentTheme.trackLine;
-        rCtx.lineWidth = 1.5 * dpr;
-        rCtx.setLineDash([8, 8]);
-        rCtx.beginPath();
-        rCtx.moveTo(0, y + trackHeight);
-        rCtx.lineTo(w, y + trackHeight);
-        rCtx.stroke();
-        rCtx.setLineDash([]);
+  const bRect = boardCanvas.parentElement.getBoundingClientRect();
+  bWidth = Math.max(300, bRect.width);
+  bHeight = Math.max(300, bRect.height);
+  boardCanvas.width = bWidth * dpr;
+  boardCanvas.height = bHeight * dpr;
+  boardCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+window.addEventListener('resize', resizeCanvases);
 
-        // 號碼指示牌
-        rCtx.fillStyle = HORSES[i].color;
-        rCtx.beginPath();
-        rCtx.roundRect(8 * dpr, y + trackHeight * 0.15, 44 * dpr, trackHeight * 0.7, 6);
-        rCtx.fill();
-        rCtx.fillStyle = '#ffffff';
-        rCtx.font = `bold ${10 * dpr}px 'Press Start 2P', monospace`;
-        rCtx.textAlign = 'center';
-        rCtx.textBaseline = 'middle';
-        const tagLabel = (i === 0) ? '1P' : (i === 1 && isTwoPlayer ? '2P' : `${i + 1}`);
-        rCtx.fillText(tagLabel, 30 * dpr, y + trackHeight * 0.52);
-      }
+function getLaneViewport(laneIdx) {
+  const totalLanes = lanes.length;
+  const subW = bWidth / totalLanes;
+  const offsetX = laneIdx * subW;
+  return { offsetX, subW, subH: bHeight };
+}
 
-      // 終點線 (格子旗隨主題變色)
-      const checkerSize = 8 * dpr;
-      const numRows = Math.floor(h / checkerSize);
-      for (let r = 0; r < numRows; r++) {
-        rCtx.fillStyle = (r % 2 === 0) ? currentTheme.finishA : currentTheme.finishB;
-        rCtx.fillRect(finishX, r * checkerSize, checkerSize, checkerSize);
-        rCtx.fillStyle = (r % 2 === 0) ? currentTheme.finishB : currentTheme.finishA;
-        rCtx.fillRect(finishX + checkerSize, r * checkerSize, checkerSize, checkerSize);
-      }
+// 將世界座標 (wx: -1~1, wy: 0~1) 投影到 3D 遠近透視畫面座標
+function projectToLane(laneIdx, wx, wy) {
+  const { offsetX, subW, subH } = getLaneViewport(laneIdx);
+  const clampedWy = Math.max(-0.08, Math.min(1.06, wy));
+  // 深度透視曲線：遠端壓縮令球道更有真實長斜坡感
+  const depth = Math.pow(Math.max(0, clampedWy), 0.84);
+  const yBottom = subH * 0.93;
+  const yTop = subH * 0.07;
+  const sy = yBottom - depth * (yBottom - yTop);
 
-      // 繪製馬匹
-      HORSES.forEach((horse, idx) => {
-        const yCenter = idx * trackHeight + trackHeight / 2;
-        const currentPosX = startX + (Math.min(GOAL_DISTANCE, horse.progress) / GOAL_DISTANCE) * playableLength;
-        drawMechanicalHorse(currentPosX, yCenter, horse, trackHeight);
+  const maxHalfWBottom = subW * (lanes.length === 1 ? 0.43 : 0.44);
+  const maxHalfWTop = subW * (lanes.length === 1 ? 0.23 : 0.27);
+  const halfW = maxHalfWBottom + depth * (maxHalfWTop - maxHalfWBottom);
 
-        // 在跑道右側顯示每匹馬目前已得步數
-        rCtx.fillStyle = 'rgba(255,255,255,0.75)';
-        rCtx.font = `bold ${9 * dpr}px sans-serif`;
-        rCtx.textAlign = 'right';
-        rCtx.fillText(`${horse.score}步`, finishX - 6 * dpr, yCenter);
-      });
+  const sx = offsetX + subW * 0.5 + wx * halfW;
+  const scale = halfW / maxHalfWBottom;
+  return { x: sx, y: sy, scale: Math.max(0.25, scale), halfW };
+}
+
+function screenToWorld(laneIdx, sx, sy) {
+  const { offsetX, subW, subH } = getLaneViewport(laneIdx);
+  const yBottom = subH * 0.93;
+  const yTop = subH * 0.07;
+  const normY = Math.max(0, Math.min(1, (yBottom - sy) / (yBottom - yTop)));
+  const wy = Math.pow(normY, 1 / 0.84);
+  const p = projectToLane(laneIdx, 0, wy);
+  const wx = (sx - (offsetX + subW * 0.5)) / p.halfW;
+  return { wx: Math.max(-0.88, Math.min(0.88, wx)), wy };
+}
+
+// ==================== 直覺式「向上推/掃」碌波控制 ====================
+function getCanvasPos(e) {
+  const rect = boardCanvas.getBoundingClientRect();
+  return {
+    x: e.clientX - rect.left,
+    y: e.clientY - rect.top
+  };
+}
+
+function launchBall(lane, ball, vx, vy) {
+  if (raceFinished) return;
+  if (!raceStarted) {
+    raceStarted = true;
+    document.getElementById('statusBanner').textContent = `🔥 比賽進行中（${DIFFICULTIES[currentDifficulty].name}）！快啲碌波入紅心！`;
+  }
+  ball.state = 'rolling';
+  ball.vx = Math.max(-0.65, Math.min(0.65, vx));
+  ball.vy = Math.max(0.95, Math.min(2.15, vy));
+  ball.trail = [];
+  playRollSound( (ball.vy - 0.9) / 1.25 );
+}
+
+boardCanvas.addEventListener('pointerdown', (e) => {
+  if (raceFinished) return;
+  initAudio();
+  boardCanvas.setPointerCapture(e.pointerId);
+  const pos = getCanvasPos(e);
+
+  const laneIdx = (lanes.length === 2 && pos.x > bWidth / 2) ? 1 : 0;
+  const lane = lanes[laneIdx];
+  if (!lane) return;
+
+  // 搵該球道處於 ready 狀態且最接近手指的木球
+  const readyBalls = lane.balls.filter(b => b.state === 'ready');
+  if (readyBalls.length === 0) return;
+
+  let chosen = readyBalls[0];
+  let bestDist = Infinity;
+  readyBalls.forEach(b => {
+    const bp = projectToLane(laneIdx, b.wx, b.wy);
+    const d = Math.hypot(pos.x - bp.x, pos.y - bp.y);
+    if (d < bestDist) {
+      bestDist = d;
+      chosen = b;
     }
+  });
 
-    // 手繪嘉年華復古發條賽馬模型
-    function drawMechanicalHorse(x, y, horse, trackHeight) {
-      const scale = (trackHeight / 48);
-      rCtx.save();
-      rCtx.translate(x, y);
+  chosen.state = 'grabbed';
+  const wPos = screenToWorld(laneIdx, pos.x, pos.y);
+  chosen.wx = Math.max(-0.78, Math.min(0.78, wPos.wx));
+  chosen.wy = Math.max(0.04, Math.min(0.22, wPos.wy));
 
-      // 只有當馬匹正在向前移動時，馬腳先會快速擺動，更有真實機械馬感覺
-      const isMoving = (horse.targetProgress - horse.progress) > 0.15;
-      horse.legAngle += isMoving ? 0.45 : (isGameRunning ? 0.08 : 0.02);
-      const legSwing = Math.sin(horse.legAngle) * (isMoving ? 0.55 : 0.15);
+  activePointers.set(e.pointerId, {
+    laneIdx,
+    ball: chosen,
+    startX: pos.x,
+    startY: pos.y,
+    curX: pos.x,
+    curY: pos.y,
+    lastX: pos.x,
+    lastY: pos.y,
+    startTime: performance.now(),
+    lastTime: performance.now()
+  });
+});
 
-      // 馬影
-      rCtx.fillStyle = 'rgba(0,0,0,0.3)';
-      rCtx.beginPath();
-      rCtx.ellipse(0, 14 * scale, 16 * scale, 5 * scale, 0, 0, Math.PI * 2);
-      rCtx.fill();
+boardCanvas.addEventListener('pointermove', (e) => {
+  const drag = activePointers.get(e.pointerId);
+  if (!drag) return;
+  const pos = getCanvasPos(e);
+  const now = performance.now();
 
-      // 馬腿 (後腿)
-      rCtx.strokeStyle = horse.horseColor;
-      rCtx.lineWidth = 3.5 * scale;
-      rCtx.lineCap = 'round';
+  drag.lastX = drag.curX;
+  drag.lastY = drag.curY;
+  drag.lastTime = now;
+  drag.curX = pos.x;
+  drag.curY = pos.y;
 
-      // 左後腿
-      rCtx.beginPath();
-      rCtx.moveTo(-8 * scale, 4 * scale);
-      rCtx.lineTo(-14 * scale + legSwing * 10, 14 * scale);
-      rCtx.stroke();
+  const lane = lanes[drag.laneIdx];
+  const ball = drag.ball;
+  if (ball.state !== 'grabbed') return;
 
-      // 左前腿
-      rCtx.beginPath();
-      rCtx.moveTo(8 * scale, 4 * scale);
-      rCtx.lineTo(14 * scale - legSwing * 10, 14 * scale);
-      rCtx.stroke();
+  const wPos = screenToWorld(drag.laneIdx, pos.x, pos.y);
+  ball.wx = Math.max(-0.80, Math.min(0.80, wPos.wx));
+  ball.wy = Math.max(0.04, Math.min(0.26, wPos.wy));
 
-      // 馬身
-      rCtx.fillStyle = horse.horseColor;
-      rCtx.beginPath();
-      rCtx.ellipse(0, 0, 15 * scale, 9 * scale, -0.05, 0, Math.PI * 2);
-      rCtx.fill();
+  // 如果玩家手指直接向上推過發球線 (wy >= 0.24 且向上移動超過 45px)，自動即時脫手飛出！
+  const dyTotal = drag.startY - pos.y;
+  if (wPos.wy >= 0.24 && dyTotal > 42) {
+    const dt = Math.max(16, now - drag.startTime);
+    const dx = pos.x - drag.startX;
+    const flickSpeedY = (dyTotal / Math.max(45, dt)) * 1.35;
+    const vy = Math.max(1.18, Math.min(2.05, 0.95 + (dyTotal / (bHeight * 0.34)) * 0.72 + flickSpeedY * 0.35));
+    const vx = (dx / (bWidth / lanes.length)) * 1.05;
+    launchBall(lane, ball, vx, vy);
+    activePointers.delete(e.pointerId);
+  }
+});
 
-      // 騎手號碼布 / 鞍部
-      rCtx.fillStyle = horse.saddle;
-      rCtx.beginPath();
-      rCtx.roundRect(-7 * scale, -7 * scale, 14 * scale, 10 * scale, 3 * scale);
-      rCtx.fill();
-      rCtx.fillStyle = '#ffffff';
-      rCtx.font = `bold ${8 * scale}px sans-serif`;
-      rCtx.textAlign = 'center';
-      rCtx.textBaseline = 'middle';
-      rCtx.fillText(horse.id.toString(), 0, -2 * scale);
+function handlePointerRelease(e) {
+  const drag = activePointers.get(e.pointerId);
+  if (!drag) return;
+  activePointers.delete(e.pointerId);
 
-      // 馬頸與頭部
-      rCtx.fillStyle = horse.horseColor;
-      rCtx.beginPath();
-      rCtx.moveTo(8 * scale, -3 * scale);
-      rCtx.lineTo(15 * scale, -13 * scale);
-      rCtx.lineTo(19 * scale, -11 * scale);
-      rCtx.lineTo(12 * scale, 4 * scale);
-      rCtx.closePath();
-      rCtx.fill();
+  const lane = lanes[drag.laneIdx];
+  const ball = drag.ball;
+  if (!lane || ball.state !== 'grabbed') return;
 
-      // 馬頭
-      rCtx.beginPath();
-      rCtx.ellipse(18 * scale, -13 * scale, 6 * scale, 4 * scale, 0.4, 0, Math.PI * 2);
-      rCtx.fill();
+  const pos = getCanvasPos(e);
+  const dx = pos.x - drag.startX;
+  const dy = drag.startY - pos.y; // 向上推 dy > 0，向後拉 dy < 0
+  const dist = Math.hypot(dx, dy);
+  const dt = Math.max(18, performance.now() - drag.startTime);
 
-      // 馬耳
-      rCtx.beginPath();
-      rCtx.moveTo(15 * scale, -16 * scale);
-      rCtx.lineTo(17 * scale, -20 * scale);
-      rCtx.lineTo(19 * scale, -16 * scale);
-      rCtx.fill();
+  let vx = 0, vy = 1.42;
 
-      // 馬尾巴
-      rCtx.strokeStyle = '#18181b';
-      rCtx.lineWidth = 2.5 * scale;
-      rCtx.beginPath();
-      rCtx.moveTo(-15 * scale, -2 * scale);
-      rCtx.quadraticCurveTo(-22 * scale, 2 * scale, -20 * scale + Math.cos(horse.legAngle) * 4, 8 * scale);
-      rCtx.stroke();
+  if (dy > 14) {
+    // 向上推波模式 (Push / Bowling Sweep)
+    const speedFactor = (dy / dt) * 1.2;
+    const distFactor = dy / (bHeight * 0.32);
+    vy = 1.05 + distFactor * 0.65 + speedFactor * 0.38;
+    vx = (dx / (bWidth / lanes.length)) * 1.15;
+  } else if (dy < -14) {
+    // 向後拉彈弓模式 (Slingshot Pull)
+    const pullFactor = Math.abs(dy) / (bHeight * 0.25);
+    vy = 1.10 + pullFactor * 0.85;
+    vx = (-dx / (bWidth / lanes.length)) * 1.15;
+  } else if (dist <= 14) {
+    // 輕點一下木球：以適中力度自動向上碌出，保證唔會卡住！
+    vy = 1.42 + (Math.random() * 0.16 - 0.08);
+    vx = (ball.wx * -0.15) + (Math.random() * 0.1 - 0.05);
+  }
 
-      // 右前腿 & 右後腿 (前層)
-      rCtx.strokeStyle = horse.horseColor;
-      rCtx.lineWidth = 3.5 * scale;
-      rCtx.beginPath();
-      rCtx.moveTo(10 * scale, 4 * scale);
-      rCtx.lineTo(15 * scale + legSwing * 10, 14 * scale);
-      rCtx.stroke();
+  launchBall(lane, ball, vx, vy);
+}
 
-      rCtx.beginPath();
-      rCtx.moveTo(-6 * scale, 4 * scale);
-      rCtx.lineTo(-11 * scale - legSwing * 10, 14 * scale);
-      rCtx.stroke();
+boardCanvas.addEventListener('pointerup', handlePointerRelease);
+boardCanvas.addEventListener('pointercancel', handlePointerRelease);
 
-      rCtx.restore();
+// 電腦鍵盤支援 (1P: A/D/W, 2P: 左右方向鍵/上方向鍵)
+window.addEventListener('keydown', (e) => {
+  if (raceFinished) return;
+  if (e.key === 'a' || e.key === 'A') {
+    lanes[0].aimX = Math.max(-0.65, lanes[0].aimX - 0.12);
+  } else if (e.key === 'd' || e.key === 'D') {
+    lanes[0].aimX = Math.min(0.65, lanes[0].aimX + 0.12);
+  } else if (e.key === 'w' || e.key === 'W' || e.key === ' ') {
+    const b = lanes[0].balls.find(ball => ball.state === 'ready');
+    if (b) {
+      b.wx = lanes[0].aimX;
+      launchBall(lanes[0], b, lanes[0].aimX * 0.25 + (Math.random() * 0.08 - 0.04), 1.48 + Math.random() * 0.18);
     }
+  }
 
-    /* =================================================================
-       3. 3D 透視長球道 (Long Perspective Roll Table) 物理與洞口系統
-       =================================================================
-       為了重現真實街機「長距離碌波」的感覺，我們採用虛擬世界座標：
-       - worldX: -1.0 (左欄) 至 +1.0 (右欄)
-       - worldY: 0.0 (玩家手邊發球區) 至 1.0 (最遠端頂部擋板)
-       - 支援單人全屏 (laneCount = 1) 或 雙人左右分屏 (laneCount = 2)
-    */
-    let bWidth = 0;
-    let bHeight = 0;
-
-    // 洞口與緩衝釘設置 (使用世界座標 0~1)
-    let holes = [];
-    let pegs = [];
-
-    // 浮動粒子效果
-    let celebrationParticles = [];
-
-    // 滾球陣列 (單人 2 粒波；雙人模式每人 2 粒波，合共 4 粒波)
-    let balls = [];
-
-    // 支援多點觸控與雙人同時拖曳嘅 Pointer 狀態表 (key: pointerId -> state)
-    const activePointers = new Map();
-
-    // 將虛擬長球道座標 (wx: -1~1, wy: 0~1) 轉換為指定球道 (laneIndex: 0 或 1) 的 3D 透視像素座標
-    function worldToScreen(wx, wy, laneIndex = 0) {
-      const dpr = window.devicePixelRatio || 1;
-      const safeW = Math.max(300, bWidth);
-      const safeH = Math.max(300, bHeight);
-      const laneCount = isTwoPlayer ? 2 : 1;
-      const laneWidth = safeW / laneCount;
-      const laneCenterX = laneIndex * laneWidth + laneWidth / 2;
-
-      const bottomY = safeH - 34 * dpr;
-      const topY = 24 * dpr;
-
-      // 透視深度修正：防止負數 Math.pow 產生 NaN 導致畫面消失
-      const clampedWy = Math.max(0, Math.min(1.05, wy));
-      const depthCurve = Math.pow(clampedWy, 0.88);
-      const sy = bottomY - depthCurve * (bottomY - topY);
-
-      // 近寬遠窄：雙人分屏時充分利用各自半邊寬度
-      const bottomHalfW = laneWidth * (isTwoPlayer ? 0.45 : 0.44);
-      const topHalfW = laneWidth * (isTwoPlayer ? 0.31 : 0.27);
-      const currentHalfW = bottomHalfW - depthCurve * (bottomHalfW - topHalfW);
-
-      const sx = laneCenterX + wx * currentHalfW;
-      // 縮放比例：底部 1.0，頂部 0.58
-      const laneScaleFactor = isTwoPlayer ? 0.78 : 1.0;
-      const scale = Math.max(0.25, (1.0 - depthCurve * 0.42) * laneScaleFactor);
-
-      return { x: sx, y: sy, scale: scale, halfWidth: currentHalfW };
-    }
-
-    function initBalls() {
-      balls = [
-        // 1P 球道 (lane: 0) 的兩粒球
-        { id: 0, lane: 0, colorSlot: 0, wx: -0.26, wy: 0.06, vx: 0, vy: 0, isRolling: false, fallingHole: null, fallProgress: 0, trail: [] },
-        { id: 1, lane: 0, colorSlot: 1, wx:  0.26, wy: 0.06, vx: 0, vy: 0, isRolling: false, fallingHole: null, fallProgress: 0, trail: [] }
-      ];
-      if (isTwoPlayer) {
-        // 2P 球道 (lane: 1) 的兩粒球
-        balls.push(
-          { id: 2, lane: 1, colorSlot: 0, wx: -0.26, wy: 0.06, vx: 0, vy: 0, isRolling: false, fallingHole: null, fallProgress: 0, trail: [] },
-          { id: 3, lane: 1, colorSlot: 1, wx:  0.26, wy: 0.06, vx: 0, vy: 0, isRolling: false, fallingHole: null, fallProgress: 0, trail: [] }
-        );
-      }
-      activePointers.clear();
-      updateBallReadyUI();
-    }
-
-    function resizeBoardCanvas() {
-      const dpr = window.devicePixelRatio || 1;
-      const container = document.getElementById('boardContainer');
-      const rect = (container || boardCanvas).getBoundingClientRect();
-      const cssW = Math.max(320, rect.width || 600);
-      const cssH = Math.max(320, rect.height || 380);
-
-      boardCanvas.width = cssW * dpr;
-      boardCanvas.height = cssH * dpr;
-      bWidth = boardCanvas.width;
-      bHeight = boardCanvas.height;
-
-      initHolesAndPegs();
-      if (balls.length === 0) {
-        initBalls();
-      }
-    }
-
-    // 定位遠端密集的嘉年華三角蜂窩洞穴陣列
-    function initHolesAndPegs() {
-      holes = [];
-      pegs = [];
-
-      // 經典密集滾球靶區 (位於遠端 wy: 0.62 ~ 0.90)
-      const layout = [
-        // 最頂排 (第4排 - 深處大獎與邊角)
-        { wx: -0.62, wy: 0.89, pts: 2, color: '#38bdf8', label: '2' },
-        { wx: -0.22, wy: 0.90, pts: 1, color: '#facc15', label: '1' },
-        { wx:  0.22, wy: 0.90, pts: 1, color: '#facc15', label: '1' },
-        { wx:  0.62, wy: 0.89, pts: 2, color: '#38bdf8', label: '2' },
-
-        // 第3排 (核心紅心排)
-        { wx: -0.44, wy: 0.80, pts: 2, color: '#38bdf8', label: '2' },
-        { wx:  0.00, wy: 0.81, pts: 3, color: '#f43f5e', label: '3★' }, // 正中最高分紅洞
-        { wx:  0.44, wy: 0.80, pts: 2, color: '#38bdf8', label: '2' },
-
-        // 第2排 (中前排)
-        { wx: -0.60, wy: 0.71, pts: 1, color: '#facc15', label: '1' },
-        { wx: -0.21, wy: 0.71, pts: 2, color: '#38bdf8', label: '2' },
-        { wx:  0.21, wy: 0.71, pts: 2, color: '#38bdf8', label: '2' },
-        { wx:  0.60, wy: 0.71, pts: 1, color: '#facc15', label: '1' },
-
-        // 第1排 (最前排入口處，包括雙紅心挑戰或1分洞)
-        { wx: -0.38, wy: 0.62, pts: 1, color: '#facc15', label: '1' },
-        { wx:  0.00, wy: 0.62, pts: 3, color: '#f43f5e', label: '3★' }, // 前排紅心洞
-        { wx:  0.38, wy: 0.62, pts: 1, color: '#facc15', label: '1' }
-      ];
-
-      layout.forEach(h => {
-        holes.push({
-          wx: h.wx,
-          wy: h.wy,
-          wRadiusX: 0.125, // 世界座標橫向半徑
-          wRadiusY: 0.036, // 世界座標縱向半徑
-          points: h.pts,
-          color: currentTheme.holeColors[h.pts] || h.color,
-          label: h.label,
-          hitEffects: [0, 0] // 分別記錄 1P 與 2P 球道的洞口發光動畫
-        });
-      });
-
-      // 兩側與交錯處的黃銅反彈釘 (令個波喺靶區左穿右插更有真實感)
-      const pegCoords = [
-        { wx: -0.82, wy: 0.66 }, { wx: 0.82, wy: 0.66 },
-        { wx: -0.82, wy: 0.82 }, { wx: 0.82, wy: 0.82 },
-        { wx: -0.20, wy: 0.55 }, { wx: 0.20, wy: 0.55 }
-      ];
-      pegCoords.forEach(p => {
-        pegs.push({ wx: p.wx, wy: p.wy, hitEffects: [0, 0] });
-      });
-    }
-
-    function resetSingleBall(b) {
-      b.isRolling = false;
-      b.fallingHole = null;
-      b.fallProgress = 0;
-      b.vx = 0;
-      b.vy = 0;
-      b.wy = 0.06;
-      b.wx = b.colorSlot === 0 ? -0.26 : 0.26;
-      b.trail = [];
-    }
-
-    function resetAllBalls() {
-      balls.forEach(b => resetSingleBall(b));
-      activePointers.clear();
-      updateBallReadyUI();
-    }
-
-    function updateBallReadyUI() {
-      const el = document.getElementById('ballReadyText');
-      if (!el) return;
-      if (!isTwoPlayer) {
-        const readyCount = balls.filter(b => b.lane === 0 && !b.isRolling && !b.fallingHole).length;
-        el.innerText = readyCount > 0 ? `可用木球 x${readyCount} 🟢` : `滾動回收中... ⏳`;
-      } else {
-        const r1 = balls.filter(b => b.lane === 0 && !b.isRolling && !b.fallingHole).length;
-        const r2 = balls.filter(b => b.lane === 1 && !b.isRolling && !b.fallingHole).length;
-        el.innerText = `1P:${r1}球 | 2P:${r2}球 ⚡`;
+  if (lanes.length === 2) {
+    if (e.key === 'ArrowLeft') {
+      lanes[1].aimX = Math.max(-0.65, lanes[1].aimX - 0.12);
+    } else if (e.key === 'ArrowRight') {
+      lanes[1].aimX = Math.min(0.65, lanes[1].aimX + 0.12);
+    } else if (e.key === 'ArrowUp') {
+      const b2 = lanes[1].balls.find(ball => ball.state === 'ready');
+      if (b2) {
+        b2.wx = lanes[1].aimX;
+        launchBall(lanes[1], b2, lanes[1].aimX * 0.25 + (Math.random() * 0.08 - 0.04), 1.48 + Math.random() * 0.18);
       }
     }
+  }
+});
 
-    // 啟動發球 (支援指定球體與力度)
-    function launchBall(ballObj, vxWorld, vyWorld) {
-      if (!ballObj || ballObj.isRolling || ballObj.fallingHole) return;
-      if (!isGameRunning && !gameEnded) {
-        startGame();
-      } else if (gameEnded) {
-        return;
-      }
+// ==================== 進球加分與賽馬推進 ====================
+function awardPoints(horseIdx, pts, lane, hole) {
+  const h = horses[horseIdx];
+  if (!h || h.steps >= TARGET_STEPS || raceFinished) return;
 
-      ballObj.vx = vxWorld;
-      ballObj.vy = vyWorld;
-      ballObj.isRolling = true;
-      ballObj.trail = [];
-      sound.playLaunch();
-      updateBallReadyUI();
+  h.steps = Math.min(TARGET_STEPS, h.steps + pts);
+  updateHud();
 
-      // 顯示力道評價提示
-      const pTag = isTwoPlayer ? (ballObj.lane === 0 ? '[1P] ' : '[2P] ') : '';
-      const powerEl = document.getElementById('powerStatus');
-      if (vyWorld > 0.029) {
-        powerEl.innerText = `${pTag}🔥 強力衝刺！(小心過猛彈出)`;
-        powerEl.className = 'text-rose-400 font-bold truncate max-w-xs sm:max-w-md';
-      } else if (vyWorld >= 0.021) {
-        powerEl.innerText = `${pTag}✨ 完美力道！直逼頂端靶區！`;
-        powerEl.className = 'text-emerald-400 font-bold truncate max-w-xs sm:max-w-md';
-      } else {
-        powerEl.innerText = `${pTag}⚠️ 力道偏弱，小心半路溜後！`;
-        powerEl.className = 'text-yellow-400 font-bold truncate max-w-xs sm:max-w-md';
-      }
+  if (lane && hole) {
+    playScoreSound(pts);
+    lane.popups.push({
+      wx: hole.wx,
+      wy: hole.wy,
+      text: `+${pts} 步!`,
+      color: hole.color,
+      alpha: 1,
+      life: 0
+    });
+    lane.holeFlash.push({ hole, alpha: 1 });
+  }
+
+  if (h.steps >= TARGET_STEPS && !finishOrder.includes(h)) {
+    finishOrder.push(h);
+    if (finishOrder.length === 1) {
+      triggerRaceFinish(h);
+    }
+  }
+}
+
+function triggerRaceFinish(winner) {
+  raceFinished = true;
+  const isHumanWin = winner.isPlayer;
+  playFanfare(isHumanWin);
+
+  const sorted = [...horses].sort((a, b) => b.steps - a.steps);
+  document.getElementById('winEmoji').textContent = isHumanWin ? '🏆' : '🐎';
+  document.getElementById('winTitle').textContent = isHumanWin ? `🎉 ${winner.name} 奪冠！` : `${winner.name} 率先衝線！`;
+  document.getElementById('winDesc').textContent = isHumanWin
+    ? `太犀利啦！喺「${DIFFICULTIES[currentDifficulty].name}」難度下率先跑完 ${TARGET_STEPS} 步奪得全場總冠軍！`
+    : `差少少咋！再碌準啲紅心 3 分洞即可反敗為勝！`;
+
+  const rankHtml = sorted.map((h, idx) => {
+    const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : '4️⃣';
+    return `<div class="flex justify-between items-center py-1 px-2 rounded ${idx === 0 ? 'bg-yellow-500/25 font-bold text-yellow-200' : ''}">
+      <span>${medal} ${h.name} (${h.badge})</span>
+      <span class="arcade-num font-bold">${h.steps} / ${TARGET_STEPS} 步</span>
+    </div>`;
+  }).join('');
+  document.getElementById('rankList').innerHTML = rankHtml;
+
+  setTimeout(() => {
+    document.getElementById('winModal').classList.remove('hidden');
+  }, 650);
+}
+
+// ==================== 物理更新與真實街機 AI 節奏 ====================
+function resetBallToTray(ball) {
+  ball.state = 'ready';
+  ball.wx = ball.homeWx;
+  ball.wy = ball.homeWy;
+  ball.vx = 0;
+  ball.vy = 0;
+  ball.trail = [];
+  ball.targetHole = null;
+}
+
+function updatePhysics(dt) {
+  // 1. 更新賽馬平滑跑動與電腦對手真實投球節奏
+  const diff = DIFFICULTIES[currentDifficulty];
+  horses.forEach((h) => {
+    if (h.displaySteps < h.steps) {
+      h.displaySteps = Math.min(h.steps, h.displaySteps + dt * 4.2);
+      h.stride += dt * 16;
+    } else if (raceStarted && !raceFinished) {
+      h.stride += dt * 3.5;
     }
 
-    /* =================================================================
-       4. 真實長斜台物理運算與洞口引力/反彈偵測
-       ================================================================= */
-    function updatePhysics() {
-      balls.forEach(b => {
-        const laneIdx = b.lane;
+    // 電腦 AI：根據所選難易度決定碌波間隔與準繩度
+    if (raceStarted && !raceFinished && !h.isPlayer) {
+      h.aiTimer += dt;
+      if (h.aiTimer >= h.nextAiRoll) {
+        h.aiTimer = 0;
+        h.nextAiRoll = getNextAiDelay();
+        const roll = Math.random();
+        if (roll < diff.missRate) {
+          // 唔入洞
+        } else if (roll < 1 - diff.threePtChance - diff.twoPtChance) {
+          awardPoints(h.id, 1, null, null);
+        } else if (roll < 1 - diff.threePtChance) {
+          awardPoints(h.id, 2, null, null);
+        } else {
+          awardPoints(h.id, 3, null, null);
+        }
+      }
+    }
+  });
 
-        // 處理正在掉入洞穴的動畫
-        if (b.fallingHole) {
-          b.fallProgress += 0.12;
-          b.wx += (b.fallingHole.wx - b.wx) * 0.35;
-          b.wy += (b.fallingHole.wy - b.wy) * 0.35;
-          if (b.fallProgress >= 1.0) {
-            resetSingleBall(b);
-            updateBallReadyUI();
-          }
-          return;
+  // 2. 更新每條球道的滾球物理
+  lanes.forEach((lane) => {
+    lane.balls.forEach((ball) => {
+      if (ball.state === 'rolling') {
+        ball.trail.push({ wx: ball.wx, wy: ball.wy });
+        if (ball.trail.length > 9) ball.trail.shift();
+
+        // 斜坡下滑重力與摩擦力
+        const slopeGravity = ball.wy > 0.48 ? 0.88 : 0.72;
+        ball.vy -= slopeGravity * dt;
+        ball.vx *= (1 - 0.45 * dt);
+        ball.vy *= (1 - 0.25 * dt);
+
+        ball.wx += ball.vx * dt;
+        ball.wy += ball.vy * dt;
+
+        // 左右木欄反彈
+        const wallLimit = 0.89;
+        if (ball.wx < -wallLimit) {
+          ball.wx = -wallLimit;
+          ball.vx = Math.abs(ball.vx) * 0.65;
+          playBumpSound();
+        } else if (ball.wx > wallLimit) {
+          ball.wx = wallLimit;
+          ball.vx = -Math.abs(ball.vx) * 0.65;
+          playBumpSound();
         }
 
-        if (!b.isRolling) return;
-
-        // 記錄殘影軌跡
-        b.trail.push({ wx: b.wx, wy: b.wy });
-        if (b.trail.length > 7) b.trail.shift();
-
-        // 1. 長斜坡重力：越往上坡度越明顯，將球自然往下拉
-        const slopeGravity = (b.wy > 0.55) ? 0.00027 : 0.00022;
-        b.vy -= slopeGravity;
-
-        // 2. 木板滾動摩擦力
-        b.vx *= 0.992;
-        b.vy *= 0.994;
-
-        b.wx += b.vx;
-        b.wy += b.vy;
-
-        // 3. 左右木欄邊界反彈
-        const sideLimit = 0.90;
-        if (b.wx < -sideLimit) {
-          b.wx = -sideLimit;
-          b.vx = -b.vx * 0.72;
-          sound.playBounce();
-        } else if (b.wx > sideLimit) {
-          b.wx = sideLimit;
-          b.vx = -b.vx * 0.72;
-          sound.playBounce();
+        // 頂端後擋板反彈
+        if (ball.wy > 0.96) {
+          ball.wy = 0.96;
+          ball.vy = -Math.abs(ball.vy) * 0.48;
+          ball.vx += (Math.random() - 0.5) * 0.25;
+          playBumpSound();
         }
 
-        // 4. 最頂端底板反彈 (如果太大力衝過頭會撞板彈返轉頭)
-        if (b.wy > 0.96) {
-          b.wy = 0.96;
-          b.vy = -Math.abs(b.vy) * 0.55;
-          b.vx += (Math.random() - 0.5) * 0.006;
-          sound.playBounce();
-        }
-
-        // 5. 黃銅緩衝釘碰撞檢測
-        for (let p of pegs) {
-          const dx = (b.wx - p.wx);
-          const dy = (b.wy - p.wy) * 3.2; // 校正長寬比
+        // 緩衝釘 (Bumpers) 碰撞
+        bumpers.forEach((bmp) => {
+          const dx = ball.wx - bmp.wx;
+          const dy = ball.wy - bmp.wy;
           const dist = Math.hypot(dx, dy);
-          const minPegDist = 0.075;
-          if (dist < minPegDist && dist > 0.0001) {
+          const minDist = bmp.r + 0.042;
+          if (dist < minDist && dist > 0.0001) {
             const nx = dx / dist;
             const ny = dy / dist;
-            const speed = Math.hypot(b.vx, b.vy * 3.2);
-            b.vx = nx * Math.max(0.005, speed * 0.65);
-            b.vy = (ny * Math.max(0.005, speed * 0.65)) / 3.2;
-            p.hitEffects[laneIdx] = 1.0;
-            sound.playBounce();
+            ball.wx = bmp.wx + nx * minDist;
+            ball.wy = bmp.wy + ny * minDist;
+            const speed = Math.hypot(ball.vx, ball.vy);
+            ball.vx = nx * Math.max(0.28, speed * 0.65);
+            ball.vy = ny * Math.max(0.28, speed * 0.65);
+            playBumpSound();
           }
-        }
+        });
 
-        // 6. 洞穴判定：真實「落袋 vs 洞口邊緣彈開」物理
-        for (let h of holes) {
-          const normDx = (b.wx - h.wx) / h.wRadiusX;
-          const normDy = (b.wy - h.wy) / h.wRadiusY;
-          const normDist = Math.hypot(normDx, normDy);
-
-          if (normDist < 1.25) {
-            const currentSpeed = Math.hypot(b.vx, b.vy * 2.5);
-
-            // 情況 A：球進入洞口範圍且速度適中 -> 成功落袋！
-            if (normDist < 0.92 && currentSpeed < 0.029) {
-              onBallScored(b, h);
-              return;
-            }
-            // 情況 B：球在洞邊減速慢行 -> 產生洞口斜面引力吸入洞中
-            else if (normDist < 1.18 && currentSpeed < 0.018) {
-              b.vx -= normDx * 0.0022;
-              b.vy -= normDy * 0.0012;
-              if (normDist < 0.96) {
-                onBallScored(b, h);
-                return;
-              }
-            }
-            // 情況 C：球速太猛衝過洞口 -> 擦邊減速並彈開
-            else if (normDist < 0.95 && currentSpeed >= 0.029) {
-              b.vx += normDx * 0.0025;
-              b.vy *= 0.80;
-              h.hitEffects[laneIdx] = 0.4;
-              sound.playBounce();
-            }
-          }
-        }
-
-        // 7. 球沒有進洞，順著長斜坡滾回起點球槽
-        if (b.wy < 0.04 && b.vy < 0) {
-          resetSingleBall(b);
-          updateBallReadyUI();
-        }
-      });
-
-      // 同一球道內的雙球互相碰撞
-      const laneCount = isTwoPlayer ? 2 : 1;
-      for (let l = 0; l < laneCount; l++) {
-        const laneBalls = balls.filter(b => b.lane === l && b.isRolling);
-        if (laneBalls.length === 2) {
-          const [b0, b1] = laneBalls;
-          const dx = b1.wx - b0.wx;
-          const dy = (b1.wy - b0.wy) * 3.0;
+        // 檢查是否跌入計分洞
+        const speed = Math.hypot(ball.vx, ball.vy);
+        for (const hole of holes) {
+          const dx = hole.wx - ball.wx;
+          const dy = hole.wy - ball.wy;
           const dist = Math.hypot(dx, dy);
-          if (dist < 0.11 && dist > 0.001) {
-            const tempVx = b0.vx;
-            const tempVy = b0.vy;
-            b0.vx = b1.vx * 0.9;
-            b0.vy = b1.vy * 0.9;
-            b1.vx = tempVx * 0.9;
-            b1.vy = tempVy * 0.9;
-            sound.playBounce();
-          }
-        }
-      }
-    }
 
-    // 當木球成功掉入洞穴 (根據球道決定係 1P 1號馬定係 2P 2號馬前進)
-    function onBallScored(ballObj, hole) {
-      const laneIdx = ballObj.lane;
-      ballObj.isRolling = false;
-      ballObj.fallingHole = hole;
-      ballObj.fallProgress = 0;
-      ballObj.trail = [];
-
-      hole.hitEffects[laneIdx] = 1.0;
-      sound.playHole(hole.points);
-
-      // 對應球道馬匹前進 (lane 0 -> 1號馬, lane 1 -> 2號馬)
-      const targetHorse = HORSES[laneIdx];
-      const boost = hole.points * STEP_PERCENT;
-      targetHorse.targetProgress = Math.min(GOAL_DISTANCE, targetHorse.targetProgress + boost);
-      targetHorse.score += hole.points;
-
-      // 畫面數字同步
-      if (laneIdx === 0) {
-        document.getElementById('playerScore').innerText = targetHorse.score;
-      } else {
-        document.getElementById('player2Score').innerText = targetHorse.score;
-      }
-
-      const pName = isTwoPlayer ? (laneIdx === 0 ? '🔴 1P' : '🔵 2P') : '🎯';
-      const powerEl = document.getElementById('powerStatus');
-      powerEl.innerText = `${pName} 靚波入洞！獲得 +${hole.points} 步加速！`;
-      powerEl.className = 'text-amber-300 font-black truncate max-w-xs sm:max-w-md';
-
-      // 轉換為該球道的螢幕座標產生特效粒子
-      const pos = worldToScreen(hole.wx, hole.wy, laneIdx);
-      spawnFloatingScore(pos.x, pos.y, `+${hole.points}`, hole.color);
-    }
-
-    // 得分漂浮文字與煙花微粒
-    function spawnFloatingScore(x, y, text, color) {
-      for (let i = 0; i < 14; i++) {
-        celebrationParticles.push({
-          x: x,
-          y: y,
-          vx: (Math.random() - 0.5) * 7,
-          vy: (Math.random() - 0.5) * 7 - 2,
-          alpha: 1,
-          size: Math.random() * 4 + 2,
-          color: color
-        });
-      }
-      celebrationParticles.push({
-        x: x,
-        y: y - 12,
-        vx: 0,
-        vy: -1.8,
-        alpha: 1,
-        text: text,
-        color: color,
-        isText: true
-      });
-    }
-
-    /* =================================================================
-       5. 3D 透視滾球台繪圖渲染 (支援單人全屏 & 雙人並排雙機台)
-       ================================================================= */
-    function drawBoard() {
-      if (bWidth <= 10 || bHeight <= 10) {
-        resizeBoardCanvas();
-      }
-      bCtx.clearRect(0, 0, bWidth, bHeight);
-
-      // 機台外側暗色背景
-      bCtx.fillStyle = currentTheme.outerBg;
-      bCtx.fillRect(0, 0, bWidth, bHeight);
-
-      const laneCount = isTwoPlayer ? 2 : 1;
-      for (let laneIdx = 0; laneIdx < laneCount; laneIdx++) {
-        drawSingleLane(laneIdx);
-      }
-
-      // 更新洞口與反彈釘發光衰減
-      holes.forEach(h => {
-        for (let l = 0; l < 2; l++) {
-          if (h.hitEffects[l] > 0) h.hitEffects[l] = Math.max(0, h.hitEffects[l] - 0.05);
-        }
-      });
-      pegs.forEach(p => {
-        for (let l = 0; l < 2; l++) {
-          if (p.hitEffects[l] > 0) p.hitEffects[l] = Math.max(0, p.hitEffects[l] - 0.08);
-        }
-      });
-
-      // 繪製所有正在拖曳的瞄準線
-      activePointers.forEach((pState) => {
-        drawAimGuide(pState);
-      });
-
-      // 繪製滾球 (由遠至近排序繪製，確保前後遮擋正確)
-      const sortedBalls = [...balls].sort((a, b) => b.wy - a.wy);
-      sortedBalls.forEach(b => drawSingleBall(b));
-
-      // 繪製粒子效果
-      updateAndDrawParticles();
-    }
-
-    function drawSingleLane(laneIdx) {
-      const dpr = window.devicePixelRatio || 1;
-      const botLeft = worldToScreen(-1, 0, laneIdx);
-      const botRight = worldToScreen(1, 0, laneIdx);
-      const topLeft = worldToScreen(-1, 1, laneIdx);
-      const topRight = worldToScreen(1, 1, laneIdx);
-      const targetStartLeft = worldToScreen(-1, 0.54, laneIdx);
-      const targetStartRight = worldToScreen(1, 0.54, laneIdx);
-
-      // 1. 繪製長球道梯形木板與絨布面
-      bCtx.save();
-      bCtx.beginPath();
-      bCtx.moveTo(botLeft.x, botLeft.y);
-      bCtx.lineTo(topLeft.x, topLeft.y);
-      bCtx.lineTo(topRight.x, topRight.y);
-      bCtx.lineTo(botRight.x, botRight.y);
-      bCtx.closePath();
-
-      const laneGrad = bCtx.createLinearGradient(0, topLeft.y, 0, botLeft.y);
-      laneGrad.addColorStop(0, currentTheme.laneStops[0]);
-      laneGrad.addColorStop(0.42, currentTheme.laneStops[1]);
-      laneGrad.addColorStop(0.45, currentTheme.laneStops[2]);
-      laneGrad.addColorStop(0.55, currentTheme.laneStops[3]);
-      laneGrad.addColorStop(1, currentTheme.laneStops[4]);
-      bCtx.fillStyle = laneGrad;
-      bCtx.fill();
-      bCtx.clip();
-
-      // 繪製縱向拼接紋理線
-      bCtx.strokeStyle = currentTheme.plankLine;
-      bCtx.lineWidth = 1.5 * dpr;
-      for (let w = -0.75; w <= 0.75; w += 0.25) {
-        const p1 = worldToScreen(w, 0, laneIdx);
-        const p2 = worldToScreen(w, 1, laneIdx);
-        bCtx.beginPath();
-        bCtx.moveTo(p1.x, p1.y);
-        bCtx.lineTo(p2.x, p2.y);
-        bCtx.stroke();
-      }
-
-      // 繪製底部發球槽軟墊區 (Ball Launch Cushion) 令玩家一眼見到波嘅位置
-      const trayTopLeft = worldToScreen(-0.98, 0.12, laneIdx);
-      const trayTopRight = worldToScreen(0.98, 0.12, laneIdx);
-      bCtx.fillStyle = 'rgba(0, 0, 0, 0.35)';
-      bCtx.beginPath();
-      bCtx.moveTo(botLeft.x, botLeft.y);
-      bCtx.lineTo(trayTopLeft.x, trayTopLeft.y);
-      bCtx.lineTo(trayTopRight.x, trayTopRight.y);
-      bCtx.lineTo(botRight.x, botRight.y);
-      bCtx.closePath();
-      bCtx.fill();
-
-      // 發球區起點虛線
-      bCtx.strokeStyle = 'rgba(250, 204, 21, 0.45)';
-      bCtx.lineWidth = 2 * dpr;
-      bCtx.setLineDash([6 * dpr, 4 * dpr]);
-      bCtx.beginPath();
-      bCtx.moveTo(trayTopLeft.x, trayTopLeft.y);
-      bCtx.lineTo(trayTopRight.x, trayTopRight.y);
-      bCtx.stroke();
-      bCtx.setLineDash([]);
-
-      // 繪製距離刻度線與推進箭咀
-      for (let wy = 0.18; wy <= 0.50; wy += 0.11) {
-        const l = worldToScreen(-0.95, wy, laneIdx);
-        const r = worldToScreen(0.95, wy, laneIdx);
-        bCtx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
-        bCtx.lineWidth = 1 * dpr;
-        bCtx.beginPath();
-        bCtx.moveTo(l.x, l.y);
-        bCtx.lineTo(r.x, r.y);
-        bCtx.stroke();
-
-        const c1 = worldToScreen(-0.08, wy - 0.02, laneIdx);
-        const c2 = worldToScreen(0, wy + 0.015, laneIdx);
-        const c3 = worldToScreen(0.08, wy - 0.02, laneIdx);
-        bCtx.strokeStyle = currentTheme.arrowColor;
-        bCtx.lineWidth = 2.5 * dpr;
-        bCtx.beginPath();
-        bCtx.moveTo(c1.x, c1.y);
-        bCtx.lineTo(c2.x, c2.y);
-        bCtx.lineTo(c3.x, c3.y);
-        bCtx.stroke();
-      }
-
-      // 雙人模式在球道中央顯示 1P / 2P 專屬浮水印與鍵盤提示
-      if (isTwoPlayer) {
-        const markPos = worldToScreen(0, 0.28, laneIdx);
-        bCtx.fillStyle = laneIdx === 0 ? 'rgba(244, 63, 94, 0.35)' : 'rgba(56, 189, 248, 0.35)';
-        bCtx.font = `900 ${16 * dpr}px sans-serif`;
-        bCtx.textAlign = 'center';
-        bCtx.fillText(laneIdx === 0 ? '1P 紅馬道' : '2P 藍馬道', markPos.x, markPos.y);
-        bCtx.font = `bold ${9.5 * dpr}px sans-serif`;
-        bCtx.fillStyle = 'rgba(255, 255, 255, 0.35)';
-        bCtx.fillText(laneIdx === 0 ? '觸控 或 [A][D]移位+[W]發球' : '觸控 或 [⬅️][➡️]移位+[⬆️]發球', markPos.x, markPos.y + 16 * dpr);
-      }
-
-      // 繪製遠端斜坡靶台分界坎 (Ramp Lip)
-      bCtx.strokeStyle = currentTheme.rampLip;
-      bCtx.lineWidth = 3 * dpr;
-      bCtx.beginPath();
-      bCtx.moveTo(targetStartLeft.x, targetStartLeft.y);
-      bCtx.lineTo(targetStartRight.x, targetStartRight.y);
-      bCtx.stroke();
-
-      bCtx.restore();
-
-      // 2. 繪製兩側立體高起圍欄 (3D 護欄)
-      const railThickness = (isTwoPlayer ? 9 : 14) * dpr;
-      bCtx.fillStyle = currentTheme.railFill;
-      bCtx.beginPath();
-      bCtx.moveTo(botLeft.x - railThickness, botLeft.y);
-      bCtx.lineTo(topLeft.x - railThickness * 0.6, topLeft.y);
-      bCtx.lineTo(topLeft.x, topLeft.y);
-      bCtx.lineTo(botLeft.x, botLeft.y);
-      bCtx.closePath();
-      bCtx.fill();
-      bCtx.strokeStyle = currentTheme.railStroke;
-      bCtx.lineWidth = 1.5 * dpr;
-      bCtx.stroke();
-
-      bCtx.fillStyle = currentTheme.railFill;
-      bCtx.beginPath();
-      bCtx.moveTo(botRight.x + railThickness, botRight.y);
-      bCtx.lineTo(topRight.x + railThickness * 0.6, topRight.y);
-      bCtx.lineTo(topRight.x, topRight.y);
-      bCtx.lineTo(botRight.x, botRight.y);
-      bCtx.closePath();
-      bCtx.fill();
-      bCtx.stroke();
-
-      // 頂部弧形拱門邊框
-      bCtx.fillStyle = currentTheme.archFill;
-      bCtx.fillRect(topLeft.x - railThickness * 0.6, topLeft.y - 10 * dpr, (topRight.x - topLeft.x) + railThickness * 1.2, 12 * dpr);
-
-      // 3. 繪製遠端靶區的洞穴
-      holes.forEach(h => {
-        const hitEff = h.hitEffects[laneIdx] || 0;
-        const center = worldToScreen(h.wx, h.wy, laneIdx);
-        const rx = h.wRadiusX * center.halfWidth * 0.92;
-        const ry = rx * 0.68;
-
-        bCtx.save();
-        bCtx.beginPath();
-        bCtx.ellipse(center.x, center.y, rx, ry, 0, 0, Math.PI * 2);
-        bCtx.fillStyle = currentTheme.holeRimBg;
-        bCtx.fill();
-
-        bCtx.strokeStyle = hitEff > 0 ? '#ffffff' : h.color;
-        bCtx.lineWidth = (2.5 + hitEff * 4) * dpr * center.scale;
-        bCtx.shadowColor = h.color;
-        bCtx.shadowBlur = (6 + hitEff * 14) * dpr;
-        bCtx.stroke();
-        bCtx.restore();
-
-        bCtx.save();
-        bCtx.beginPath();
-        bCtx.ellipse(center.x, center.y, rx * 0.82, ry * 0.80, 0, 0, Math.PI * 2);
-        bCtx.clip();
-
-        bCtx.fillStyle = currentTheme.holeWall;
-        bCtx.fillRect(center.x - rx, center.y - ry, rx * 2, ry * 2);
-
-        bCtx.beginPath();
-        bCtx.ellipse(center.x, center.y + ry * 0.22, rx * 0.78, ry * 0.75, 0, 0, Math.PI * 2);
-        bCtx.fillStyle = '#000000';
-        bCtx.fill();
-        bCtx.restore();
-
-        bCtx.fillStyle = hitEff > 0 ? '#ffffff' : h.color;
-        const fontSize = Math.max(8, Math.round(13 * center.scale)) * dpr;
-        bCtx.font = `900 ${fontSize}px 'Press Start 2P', monospace`;
-        bCtx.textAlign = 'center';
-        bCtx.textBaseline = 'middle';
-        bCtx.fillText(h.label, center.x, center.y + ry * 0.05);
-      });
-
-      // 4. 繪製反彈釘 (Bumpers)
-      pegs.forEach(p => {
-        const hitEff = p.hitEffects[laneIdx] || 0;
-        const pos = worldToScreen(p.wx, p.wy, laneIdx);
-        const r = 6.5 * dpr * pos.scale;
-        bCtx.beginPath();
-        bCtx.arc(pos.x, pos.y, r, 0, Math.PI * 2);
-        bCtx.fillStyle = hitEff > 0 ? '#ffffff' : currentTheme.pegFill;
-        bCtx.shadowColor = currentTheme.pegGlow;
-        bCtx.shadowBlur = (hitEff > 0 ? 12 : 4) * dpr;
-        bCtx.fill();
-        bCtx.shadowBlur = 0;
-      });
-    }
-
-    function drawAimGuide(pState) {
-      const dpr = window.devicePixelRatio;
-      const ball = pState.ball;
-      if (!ball) return;
-
-      const ballPos = worldToScreen(ball.wx, ball.wy, ball.lane);
-      const rawDx = pState.currentX - pState.startX;
-      const rawDy = pState.currentY - pState.startY;
-
-      let aimVecX = 0;
-      let aimVecY = 0;
-      let pullDist = 0;
-
-      if (rawDy < -5 * dpr) {
-        aimVecX = rawDx;
-        aimVecY = rawDy;
-        pullDist = Math.hypot(rawDx, rawDy);
-      } else if (rawDy > 5 * dpr) {
-        aimVecX = -rawDx;
-        aimVecY = -rawDy;
-        pullDist = Math.hypot(rawDx, rawDy);
-      }
-
-      if (pullDist > 6 * dpr) {
-        const maxPull = 120 * dpr;
-        const powerRatio = Math.min(1.0, pullDist / maxPull);
-
-        const aimX = ballPos.x + aimVecX * 1.8;
-        const aimY = ballPos.y + aimVecY * 1.8;
-
-        const gaugeColor = powerRatio > 0.88 ? '#f43f5e' : (powerRatio >= 0.45 ? '#22c55e' : '#facc15');
-
-        bCtx.beginPath();
-        bCtx.moveTo(ballPos.x, ballPos.y);
-        bCtx.lineTo(aimX, aimY);
-        bCtx.strokeStyle = gaugeColor;
-        bCtx.lineWidth = 4 * dpr;
-        bCtx.setLineDash([6 * dpr, 5 * dpr]);
-        bCtx.stroke();
-        bCtx.setLineDash([]);
-
-        bCtx.beginPath();
-        bCtx.arc(aimX, aimY, 8 * dpr, 0, Math.PI * 2);
-        bCtx.fillStyle = gaugeColor;
-        bCtx.fill();
-
-        bCtx.fillStyle = '#ffffff';
-        bCtx.font = `bold ${11 * dpr}px sans-serif`;
-        bCtx.textAlign = 'center';
-        bCtx.fillText(`推力 ${Math.round(powerRatio * 100)}%`, ballPos.x, ballPos.y - 30 * dpr);
-      }
-    }
-
-    // 繪製具備遠近縮放與滾動殘影的木球
-    function drawSingleBall(b) {
-      const dpr = window.devicePixelRatio || 1;
-      const pos = worldToScreen(b.wx, b.wy, b.lane);
-      if (!isFinite(pos.x) || !isFinite(pos.y)) return;
-
-      const baseRadius = Math.max(15, 22 * dpr);
-
-      // 若正在掉入洞口，球體縮小並變暗
-      const fallScale = b.fallingHole ? Math.max(0.15, 1.0 - b.fallProgress * 0.65) : 1.0;
-      const r = Math.max(4, baseRadius * pos.scale * fallScale);
-
-      // 繪製高速滾動殘影
-      if (b.isRolling && b.trail.length > 1) {
-        b.trail.forEach((t, idx) => {
-          const tPos = worldToScreen(t.wx, t.wy, b.lane);
-          const tr = Math.max(2, baseRadius * tPos.scale * ((idx + 1) / b.trail.length) * 0.85);
-          bCtx.beginPath();
-          bCtx.arc(tPos.x, tPos.y, tr, 0, Math.PI * 2);
-          bCtx.fillStyle = `rgba(251, 191, 36, ${(idx + 1) * 0.045})`;
-          bCtx.fill();
-        });
-      }
-
-      bCtx.save();
-      bCtx.translate(pos.x, pos.y);
-      if (b.fallingHole) {
-        bCtx.globalAlpha = Math.max(0, 1 - b.fallProgress * 0.85);
-      }
-
-      // 若木球在手邊準備區，加上呼吸光圈提示玩家可以隨時推球
-      if (!b.isRolling && !b.fallingHole) {
-        bCtx.beginPath();
-        bCtx.arc(0, 0, r * 1.22, 0, Math.PI * 2);
-        bCtx.strokeStyle = 'rgba(250, 204, 21, 0.55)';
-        bCtx.lineWidth = 2 * dpr;
-        bCtx.stroke();
-      }
-
-      // 滾球底部陰影
-      bCtx.beginPath();
-      bCtx.ellipse(0, r * 0.35, r * 0.95, r * 0.55, 0, 0, Math.PI * 2);
-      bCtx.fillStyle = 'rgba(0, 0, 0, 0.55)';
-      bCtx.fill();
-
-      // 球體漸層 (隨主題切換)
-      const ballGrad = bCtx.createRadialGradient(-r * 0.32, -r * 0.32, Math.max(1, r * 0.08), 0, 0, r);
-      const stops = b.colorSlot === 0 ? currentTheme.ball0 : currentTheme.ball1;
-      ballGrad.addColorStop(0, stops[0]);
-      ballGrad.addColorStop(0.28, stops[1]);
-      ballGrad.addColorStop(0.7, stops[2]);
-      ballGrad.addColorStop(1, stops[3]);
-
-      bCtx.beginPath();
-      bCtx.arc(0, 0, r, 0, Math.PI * 2);
-      bCtx.fillStyle = ballGrad;
-      bCtx.fill();
-
-      // 滾動條紋細節
-      if (b.isRolling) {
-        const stripeOffset = Math.sin(b.wy * 45) * r * 0.45;
-        bCtx.strokeStyle = 'rgba(255,255,255,0.28)';
-        bCtx.lineWidth = 2 * dpr * pos.scale;
-        bCtx.beginPath();
-        bCtx.arc(0, stripeOffset, r * 0.65, 0.2, Math.PI - 0.2);
-        bCtx.stroke();
-      }
-
-      bCtx.strokeStyle = 'rgba(255,255,255,0.35)';
-      bCtx.lineWidth = 1.5 * dpr * pos.scale;
-      bCtx.stroke();
-
-      bCtx.restore();
-    }
-
-    // 粒子與飄字更新
-    function updateAndDrawParticles() {
-      const dpr = window.devicePixelRatio;
-      for (let i = celebrationParticles.length - 1; i >= 0; i--) {
-        const p = celebrationParticles[i];
-        p.x += p.vx;
-        p.y += p.vy;
-        p.alpha -= 0.025;
-
-        if (p.alpha <= 0) {
-          celebrationParticles.splice(i, 1);
-          continue;
-        }
-
-        bCtx.save();
-        bCtx.globalAlpha = Math.max(0, p.alpha);
-        if (p.isText) {
-          bCtx.fillStyle = p.color;
-          bCtx.font = `bold ${18 * dpr}px 'Press Start 2P', monospace`;
-          bCtx.textAlign = 'center';
-          bCtx.shadowColor = p.color;
-          bCtx.shadowBlur = 8;
-          bCtx.fillText(p.text, p.x, p.y);
-        } else {
-          bCtx.beginPath();
-          bCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-          bCtx.fillStyle = p.color;
-          bCtx.fill();
-        }
-        bCtx.restore();
-      }
-    }
-
-    /* =================================================================
-       6. 電腦對手 AI 與比賽邏輯 (真實街機投球節奏與平滑跑動)
-       ================================================================= */
-    function updateRace() {
-      if (!isGameRunning || gameEnded) return;
-
-      let anyHorseMoving = false;
-
-      HORSES.forEach((horse) => {
-        // 1. 馬匹平滑向前奔跑動畫 (模仿街機實體馬匹沿軌道滑行)
-        if (horse.progress < horse.targetProgress) {
-          horse.progress = Math.min(horse.targetProgress, horse.progress + 0.18);
-          anyHorseMoving = true;
-
-          // 當馬匹實際跑到 100% 終點線時觸發勝利
-          if (horse.progress >= GOAL_DISTANCE && !gameEnded) {
-            finishGame(horse);
-          }
-        }
-
-        // 2. 電腦玩家模擬真實人類「碌波冷卻時間 + 入洞率」
-        if (!horse.isPlayer && !gameEnded) {
-          horse.aiCooldown--;
-          if (horse.aiCooldown <= 0) {
-            // 電腦每 3 ~ 4.8 秒 (約 180 ~ 290 frames) 碌出一球
-            horse.aiCooldown = Math.floor(185 + Math.random() * 105);
-
-            // 電腦並非百發百中：約 62% 機率入洞，38% 機率落空滾回
-            if (Math.random() < 0.62) {
-              const roll = Math.random();
-              // 大多數入 1 分黃洞或 2 分藍洞，偶爾入 3 分紅心洞
-              const aiPts = roll < 0.14 ? 3 : (roll < 0.50 ? 2 : 1);
-              horse.score += aiPts;
-              horse.targetProgress = Math.min(GOAL_DISTANCE, horse.targetProgress + aiPts * STEP_PERCENT);
+          if (dist < hole.r * 0.92) {
+            // 如果球速唔係超快衝過，就會被洞口吸落袋！
+            if (speed < 1.55 || dist < hole.r * 0.58) {
+              ball.state = 'sinking';
+              ball.sinkTimer = 0;
+              ball.targetHole = hole;
+              awardPoints(lane.horseIndex, hole.pts, lane, hole);
+              break;
+            } else {
+              // 太大力擦邊彈開 (Lip-out)
+              ball.vx += (dx / dist) * 0.25;
+              ball.vy *= 0.72;
             }
           }
         }
-      });
 
-      // 當有馬匹正在移動時播放清脆馬蹄聲
-      if (anyHorseMoving) {
-        gallopTimer++;
-        if (gallopTimer % 12 === 0) {
-          sound.playGallop();
+        // 溜後返到底部發球區自動歸位
+        if (ball.wy <= 0.06 && ball.vy < 0) {
+          resetBallToTray(ball);
         }
-      }
-    }
-
-    // 開始比賽
-    function startGame() {
-      HORSES.forEach((h, idx) => {
-        h.progress = 0;
-        h.targetProgress = 0;
-        h.score = 0;
-        h.aiCooldown = 120 + idx * 45 + Math.floor(Math.random() * 40);
-      });
-      document.getElementById('playerScore').innerText = '0';
-      document.getElementById('player2Score').innerText = '0';
-      document.getElementById('gameStatusText').innerText = isTwoPlayer ? '⚔️ 1P VS 2P RACE!' : '🐎 RACE IN PROGRESS!';
-      document.getElementById('gameStatusText').classList.replace('text-yellow-400', 'text-emerald-400');
-      document.getElementById('dragHint').style.display = 'none';
-
-      isGameRunning = true;
-      gameEnded = false;
-      resetAllBalls();
-    }
-
-    // 比賽結束結算
-    function finishGame(winner) {
-      gameEnded = true;
-      isGameRunning = false;
-      document.getElementById('gameStatusText').innerText = `🏆 WINNER: ${winner.name}`;
-
-      sound.playCheer();
-
-      // 排序排名
-      const ranked = [...HORSES].sort((a, b) => b.progress - a.progress);
-
-      const modal = document.getElementById('modalOverlay');
-      const title = document.getElementById('modalTitle');
-      const desc = document.getElementById('modalDesc');
-      const icon = document.getElementById('modalIcon');
-
-      if (winner.isPlayer) {
-        icon.innerText = '👑';
-        if (isTwoPlayer) {
-          const pTag = winner.playerIndex === 0 ? '🔴 1P 玩家' : '🔵 2P 玩家';
-          title.innerText = `${pTag} 勇奪頭馬！`;
-          desc.innerText = `恭喜 ${winner.name} 喺雙人對決中技壓全場，率先衝過終點線！`;
-        } else {
-          title.innerText = '大獲全勝！勇奪頭馬！';
-          desc.innerText = `太強了！你精準的進球讓 1 號馬以全場第一名率先衝過終點！`;
+      } else if (ball.state === 'sinking') {
+        ball.sinkTimer += dt;
+        if (ball.targetHole) {
+          ball.wx += (ball.targetHole.wx - ball.wx) * 12 * dt;
+          ball.wy += (ball.targetHole.wy - ball.wy) * 12 * dt;
         }
-      } else {
-        icon.innerText = '🥈';
-        title.innerText = '惜敗！電腦對手搶先衝線';
-        desc.innerText = `${winner.name} 率先衝過了終點線！快換個角度再試一次！`;
-      }
-
-      document.getElementById('rank1Name').innerText = `${ranked[0].name} (${Math.round(ranked[0].progress)}%)`;
-      document.getElementById('rank2Name').innerText = `${ranked[1].name} (${Math.round(ranked[1].progress)}%)`;
-      document.getElementById('rank3Name').innerText = `${ranked[2].name} (${Math.round(ranked[2].progress)}%)`;
-      document.getElementById('rank4Name').innerText = `${ranked[3].name} (${Math.round(ranked[3].progress)}%)`;
-
-      modal.classList.remove('hidden');
-      modal.classList.add('flex');
-    }
-
-    /* =================================================================
-       7. 操作控制 (支援雙人 Multi-Touch 同時碌波 + 鍵盤 1P/2P 快速對戰)
-       ================================================================= */
-    function getCanvasPos(clientX, clientY) {
-      const rect = boardCanvas.getBoundingClientRect();
-      return {
-        x: (clientX - rect.left) * window.devicePixelRatio,
-        y: (clientY - rect.top) * window.devicePixelRatio
-      };
-    }
-
-    function startPointerDrag(pointerId, pos) {
-      sound.init();
-      // 根據點擊位置判斷屬於 1P (左半) 還是 2P (右半) 球道
-      const laneIdx = (isTwoPlayer && pos.x >= bWidth / 2) ? 1 : 0;
-      const laneCount = isTwoPlayer ? 2 : 1;
-      const laneWidth = bWidth / laneCount;
-      const laneCenterX = laneIdx * laneWidth + laneWidth / 2;
-
-      // 尋找該球道手邊可用且未被其他手指按住的木球
-      const busyBalls = new Set(Array.from(activePointers.values()).map(p => p.ball));
-      const availableBalls = balls.filter(b => b.lane === laneIdx && !b.isRolling && !b.fallingHole && !busyBalls.has(b));
-      if (availableBalls.length === 0) return;
-
-      let chosen = availableBalls[0];
-      let minDist = Infinity;
-      availableBalls.forEach(b => {
-        const bScreen = worldToScreen(b.wx, b.wy, laneIdx);
-        const d = Math.hypot(pos.x - bScreen.x, pos.y - bScreen.y);
-        if (d < minDist) {
-          minDist = d;
-          chosen = b;
-        }
-      });
-
-      const clampedX = Math.max(-0.75, Math.min(0.75, (pos.x - laneCenterX) / (laneWidth * 0.42)));
-      chosen.wx = clampedX;
-      chosen.wy = 0.06;
-
-      const ballScreen = worldToScreen(chosen.wx, chosen.wy, laneIdx);
-      activePointers.set(pointerId, {
-        ball: chosen,
-        laneIdx: laneIdx,
-        startX: pos.x,
-        startY: Math.max(pos.y, ballScreen.y - 20 * window.devicePixelRatio),
-        currentX: pos.x,
-        currentY: pos.y,
-        history: [{ x: pos.x, y: pos.y, time: performance.now() }]
-      });
-    }
-
-    function movePointerDrag(pointerId, pos) {
-      const pState = activePointers.get(pointerId);
-      if (!pState || !pState.ball) return;
-
-      pState.currentX = pos.x;
-      pState.currentY = pos.y;
-      const now = performance.now();
-      pState.history.push({ x: pos.x, y: pos.y, time: now });
-      if (pState.history.length > 8) pState.history.shift();
-
-      const dpr = window.devicePixelRatio;
-      const laneCount = isTwoPlayer ? 2 : 1;
-      const laneWidth = bWidth / laneCount;
-      const laneCenterX = pState.laneIdx * laneWidth + laneWidth / 2;
-      const pushUpDist = (pState.startY - pState.currentY) / dpr;
-
-      if (pushUpDist > 0) {
-        const followWy = Math.min(0.18, 0.06 + (pushUpDist / 160) * 0.12);
-        const followWx = Math.max(-0.78, Math.min(0.78, (pos.x - laneCenterX) / (laneWidth * 0.42)));
-        pState.ball.wx = followWx;
-        pState.ball.wy = followWy;
-
-        if (pushUpDist >= 135) {
-          finishPointerDrag(pointerId);
-        }
-      } else {
-        const followWx = Math.max(-0.75, Math.min(0.75, (pState.startX - laneCenterX) / (laneWidth * 0.42)));
-        pState.ball.wx = followWx;
-        pState.ball.wy = 0.05;
-      }
-    }
-
-    function finishPointerDrag(pointerId) {
-      const pState = activePointers.get(pointerId);
-      if (!pState || !pState.ball) return;
-      activePointers.delete(pointerId);
-
-      const activeBall = pState.ball;
-      const dpr = window.devicePixelRatio;
-      const moveX = (pState.currentX - pState.startX) / dpr;
-      const moveY = (pState.currentY - pState.startY) / dpr;
-
-      const firstPt = pState.history[0];
-      const lastPt = pState.history[pState.history.length - 1];
-      const dt = Math.max(16, lastPt.time - firstPt.time);
-      const vxFlick = ((lastPt.x - firstPt.x) / dpr) / dt;
-      const vyFlick = ((firstPt.y - lastPt.y) / dpr) / dt;
-
-      if (moveY < -8 || vyFlick > 0.15) {
-        const upDist = Math.abs(moveY);
-        const distFactor = Math.min(1.0, upDist / 125);
-        const speedFactor = Math.min(1.0, Math.max(0, vyFlick) / 1.1);
-        const combinedRatio = Math.min(1.0, Math.max(distFactor * 0.85, speedFactor * 0.95) + distFactor * 0.2);
-
-        const vyWorld = 0.019 + combinedRatio * 0.0115;
-        const vxWorld = Math.max(-0.015, Math.min(0.015, moveX * 0.00011 + vxFlick * 0.004));
-        launchBall(activeBall, vxWorld, vyWorld);
-      } else if (moveY > 10) {
-        const pullDist = Math.hypot(moveX, moveY);
-        const powerRatio = Math.min(1.0, pullDist / 115);
-        const vyWorld = 0.019 + powerRatio * 0.0115;
-        const vxWorld = Math.max(-0.015, Math.min(0.015, -moveX * 0.00013));
-        launchBall(activeBall, vxWorld, vyWorld);
-      } else {
-        const autoVy = 0.0235 + (Math.random() - 0.5) * 0.003;
-        const autoVx = (Math.random() - 0.5) * 0.004;
-        launchBall(activeBall, autoVx, autoVy);
-      }
-    }
-
-    // 滑鼠事件
-    boardCanvas.addEventListener('mousedown', (e) => {
-      if (e.cancelable) e.preventDefault();
-      startPointerDrag('mouse', getCanvasPos(e.clientX, e.clientY));
-    });
-    window.addEventListener('mousemove', (e) => {
-      if (!activePointers.has('mouse')) return;
-      if (e.cancelable) e.preventDefault();
-      movePointerDrag('mouse', getCanvasPos(e.clientX, e.clientY));
-    });
-    window.addEventListener('mouseup', () => {
-      finishPointerDrag('mouse');
-    });
-
-    // 多點觸控事件 (支援 1P 同 2P 兩隻手同時喺左右半場碌波！)
-    boardCanvas.addEventListener('touchstart', (e) => {
-      if (e.cancelable) e.preventDefault();
-      for (let i = 0; i < e.changedTouches.length; i++) {
-        const t = e.changedTouches[i];
-        startPointerDrag(t.identifier, getCanvasPos(t.clientX, t.clientY));
-      }
-    }, { passive: false });
-
-    window.addEventListener('touchmove', (e) => {
-      if (activePointers.size === 0) return;
-      if (e.cancelable) e.preventDefault();
-      for (let i = 0; i < e.changedTouches.length; i++) {
-        const t = e.changedTouches[i];
-        movePointerDrag(t.identifier, getCanvasPos(t.clientX, t.clientY));
-      }
-    }, { passive: false });
-
-    const onTouchEndOrCancel = (e) => {
-      for (let i = 0; i < e.changedTouches.length; i++) {
-        const t = e.changedTouches[i];
-        finishPointerDrag(t.identifier);
-      }
-    };
-    window.addEventListener('touchend', onTouchEndOrCancel, { passive: false });
-    window.addEventListener('touchcancel', onTouchEndOrCancel, { passive: false });
-
-    // 電腦鍵盤雙人支援：1P (A/D 移位, W 發射) & 2P (左右鍵移位, 上鍵發射)
-    window.addEventListener('keydown', (e) => {
-      const key = e.key.toLowerCase();
-      // 1P 鍵盤操作
-      const p1Balls = balls.filter(b => b.lane === 0 && !b.isRolling && !b.fallingHole);
-      if (p1Balls.length > 0) {
-        const b1 = p1Balls[0];
-        if (key === 'a') {
-          b1.wx = Math.max(-0.75, b1.wx - 0.14);
-        } else if (key === 'd') {
-          b1.wx = Math.min(0.75, b1.wx + 0.14);
-        } else if (key === 'w') {
-          sound.init();
-          const vy = 0.0235 + (Math.random() - 0.5) * 0.004;
-          const vx = (Math.random() - 0.5) * 0.004;
-          launchBall(b1, vx, vy);
-        }
-      }
-
-      // 2P 鍵盤操作 (或在單人模式亦可用方向鍵操作 1P)
-      const targetLane = isTwoPlayer ? 1 : 0;
-      const p2Balls = balls.filter(b => b.lane === targetLane && !b.isRolling && !b.fallingHole);
-      if (p2Balls.length > 0) {
-        const b2 = p2Balls[0];
-        if (e.key === 'ArrowLeft') {
-          e.preventDefault();
-          b2.wx = Math.max(-0.75, b2.wx - 0.14);
-        } else if (e.key === 'ArrowRight') {
-          e.preventDefault();
-          b2.wx = Math.min(0.75, b2.wx + 0.14);
-        } else if (e.key === 'ArrowUp') {
-          e.preventDefault();
-          sound.init();
-          const vy = 0.0235 + (Math.random() - 0.5) * 0.004;
-          const vx = (Math.random() - 0.5) * 0.004;
-          launchBall(b2, vx, vy);
+        if (ball.sinkTimer > 0.36) {
+          resetBallToTray(ball);
         }
       }
     });
 
-    // 單人 / 雙人模式按鈕綁定
-    document.getElementById('mode1PBtn').addEventListener('click', () => {
-      sound.playBounce();
-      setPlayerMode(false);
-    });
-    document.getElementById('mode2PBtn').addEventListener('click', () => {
-      sound.playBounce();
-      setPlayerMode(true);
-    });
-
-    // 按鈕控制
-    document.getElementById('startBtn').addEventListener('click', () => {
-      sound.init();
-      startGame();
-    });
-
-    document.getElementById('modalActionBtn').addEventListener('click', () => {
-      document.getElementById('modalOverlay').classList.add('hidden');
-      document.getElementById('modalOverlay').classList.remove('flex');
-      startGame();
-    });
-
-    document.getElementById('soundToggleBtn').addEventListener('click', () => {
-      sound.enabled = !sound.enabled;
-      document.getElementById('soundIcon').innerText = sound.enabled ? '🔊' : '🔇';
-    });
-
-    // 綁定 3 大風格主題切換按鈕
-    document.querySelectorAll('.theme-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const themeKey = btn.getAttribute('data-theme');
-        sound.playBounce();
-        applyTheme(themeKey);
-      });
-    });
-
-    // 說明彈窗
-    const helpModal = document.getElementById('helpModal');
-    document.getElementById('helpBtn').addEventListener('click', () => {
-      helpModal.classList.remove('hidden');
-      helpModal.classList.add('flex');
-    });
-    const hideHelp = () => {
-      helpModal.classList.add('hidden');
-      helpModal.classList.remove('flex');
-    };
-    document.getElementById('closeHelpBtn').addEventListener('click', hideHelp);
-    document.getElementById('closeHelpBtn2').addEventListener('click', hideHelp);
-
-    /* =================================================================
-       8. 主遊戲循環與自我調適
-       ================================================================= */
-    function gameLoop() {
-      updatePhysics();
-      updateRace();
-      drawRaceTracks();
-      drawBoard();
-      requestAnimationFrame(gameLoop);
+    // 同球道兩粒滾動中木球互相碰撞
+    const b0 = lane.balls[0];
+    const b1 = lane.balls[1];
+    if (b0.state === 'rolling' && b1.state === 'rolling') {
+      const dx = b1.wx - b0.wx;
+      const dy = b1.wy - b0.wy;
+      const dist = Math.hypot(dx, dy);
+      if (dist < 0.11 && dist > 0.001) {
+        const nx = dx / dist, ny = dy / dist;
+        b0.vx -= nx * 0.35; b0.vy -= ny * 0.35;
+        b1.vx += nx * 0.35; b1.vy += ny * 0.35;
+        playBumpSound();
+      }
     }
 
-    function handleResize() {
-      resizeRaceCanvas();
-      resizeBoardCanvas();
+    // 更新得分飄字與洞口閃光
+    lane.popups.forEach(p => { p.wy += dt * 0.12; p.life += dt; p.alpha = Math.max(0, 1 - p.life / 0.85); });
+    lane.popups = lane.popups.filter(p => p.life < 0.85);
+
+    lane.holeFlash.forEach(f => { f.alpha -= dt * 2.2; });
+    lane.holeFlash = lane.holeFlash.filter(f => f.alpha > 0);
+  });
+}
+
+// ==================== 繪製上半部：賽馬跑道 ====================
+function drawTrack() {
+  const theme = THEMES[currentThemeKey];
+  trackCtx.clearRect(0, 0, tWidth, tHeight);
+
+  // 天空背景
+  const skyH = tHeight * 0.28;
+  const skyGrad = trackCtx.createLinearGradient(0, 0, 0, skyH);
+  skyGrad.addColorStop(0, theme.skyTop);
+  skyGrad.addColorStop(1, theme.skyBottom);
+  trackCtx.fillStyle = skyGrad;
+  trackCtx.fillRect(0, 0, tWidth, skyH);
+
+  // 跑道地面
+  const turfGrad = trackCtx.createLinearGradient(0, skyH, 0, tHeight);
+  turfGrad.addColorStop(0, theme.turfTop);
+  turfGrad.addColorStop(1, theme.turfBottom);
+  trackCtx.fillStyle = turfGrad;
+  trackCtx.fillRect(0, skyH, tWidth, tHeight - skyH);
+
+  // 白色護欄
+  trackCtx.strokeStyle = theme.fenceColor;
+  trackCtx.lineWidth = 2;
+  trackCtx.beginPath();
+  trackCtx.moveTo(0, skyH);
+  trackCtx.lineTo(tWidth, skyH);
+  trackCtx.stroke();
+  for (let x = 20; x < tWidth; x += 36) {
+    trackCtx.fillStyle = theme.fenceColor;
+    trackCtx.fillRect(x, skyH - 7, 3, 10);
+  }
+
+  const startX = 52;
+  const finishX = tWidth - 48;
+  const trackRange = finishX - startX;
+
+  // 終點黑白格仔線與拱門
+  const checkW = 10;
+  const rows = 10;
+  const rowH = (tHeight - skyH) / rows;
+  for (let r = 0; r < rows; r++) {
+    trackCtx.fillStyle = r % 2 === 0 ? '#ffffff' : '#111827';
+    trackCtx.fillRect(finishX, skyH + r * rowH, checkW, rowH);
+    trackCtx.fillStyle = r % 2 === 1 ? '#ffffff' : '#111827';
+    trackCtx.fillRect(finishX + checkW, skyH + r * rowH, checkW, rowH);
+  }
+
+  // 4 條跑道分隔線與賽馬
+  const laneH = (tHeight - skyH) / 4;
+  horses.forEach((h, idx) => {
+    const laneTop = skyH + idx * laneH;
+    const laneCenterY = laneTop + laneH * 0.56;
+
+    if (idx > 0) {
+      trackCtx.strokeStyle = theme.laneLine;
+      trackCtx.lineWidth = 1;
+      trackCtx.setLineDash([8, 6]);
+      trackCtx.beginPath();
+      trackCtx.moveTo(0, laneTop);
+      trackCtx.lineTo(tWidth, laneTop);
+      trackCtx.stroke();
+      trackCtx.setLineDash([]);
     }
 
-    window.addEventListener('resize', handleResize);
+    const progress = Math.min(1, h.displaySteps / TARGET_STEPS);
+    const hx = startX + progress * trackRange;
+    const bounce = Math.abs(Math.sin(h.stride)) * 3.5;
+    const legSwing = Math.sin(h.stride) * 6;
 
-    window.onload = function() {
-      initHolesAndPegs();
-      initBalls();
-      handleResize();
-      // 延遲微調確保 flex 尺寸完全確立
-      setTimeout(handleResize, 100);
-      gameLoop();
-    };
-  </script>
+    drawHorseSprite(trackCtx, hx, laneCenterY - bounce, h, legSwing);
+  });
+}
+
+function drawHorseSprite(ctx, x, y, h, legSwing) {
+  ctx.save();
+  ctx.translate(x, y);
+
+  // 馬匹陰影
+  ctx.fillStyle = 'rgba(0,0,0,0.35)';
+  ctx.beginPath();
+  ctx.ellipse(0, 13, 18, 4, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 前後四肢
+  ctx.strokeStyle = h.coat;
+  ctx.lineWidth = 3.2;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(-9, 3); ctx.lineTo(-12 - legSwing, 12);
+  ctx.moveTo(-5, 3); ctx.lineTo(-5 + legSwing * 0.7, 12);
+  ctx.moveTo(8, 3);  ctx.lineTo(11 + legSwing, 12);
+  ctx.moveTo(5, 3);  ctx.lineTo(5 - legSwing * 0.7, 12);
+  ctx.stroke();
+
+  // 馬尾
+  ctx.strokeStyle = h.mane;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(-13, -2);
+  ctx.quadraticCurveTo(-21, -4, -23, 4);
+  ctx.stroke();
+
+  // 馬身
+  ctx.fillStyle = h.coat;
+  ctx.beginPath();
+  ctx.ellipse(0, 0, 14, 7.5, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 號碼鞍布
+  ctx.fillStyle = h.color;
+  ctx.fillRect(-6, -6, 11, 8);
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 8px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(h.id + 1, -0.5, 0.5);
+
+  // 馬頸與馬頭
+  ctx.fillStyle = h.coat;
+  ctx.beginPath();
+  ctx.moveTo(8, -2);
+  ctx.lineTo(15, -12);
+  ctx.lineTo(22, -9);
+  ctx.lineTo(19, -4);
+  ctx.lineTo(12, 3);
+  ctx.closePath();
+  ctx.fill();
+
+  // 騎師頭盔與彩衣
+  ctx.fillStyle = h.color;
+  ctx.beginPath();
+  ctx.arc(3, -10, 4.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 玩家標籤氣泡
+  ctx.fillStyle = h.isPlayer ? '#fde047' : 'rgba(0,0,0,0.65)';
+  ctx.fillRect(-38, -11, 22, 11);
+  ctx.fillStyle = h.isPlayer ? '#000000' : '#ffffff';
+  ctx.font = 'bold 8px sans-serif';
+  ctx.fillText(h.badge, -27, -3);
+
+  ctx.restore();
+}
+
+// ==================== 繪製下半部：3D 透視長球道與靶台 ====================
+function drawBoard() {
+  if (bWidth < 50 || bHeight < 50) return;
+  const theme = THEMES[currentThemeKey];
+  boardCtx.clearRect(0, 0, bWidth, bHeight);
+
+  // 暗角背景
+  boardCtx.fillStyle = theme.woodDark;
+  boardCtx.fillRect(0, 0, bWidth, bHeight);
+
+  lanes.forEach((lane, laneIdx) => {
+    drawSingleLane(lane, laneIdx, theme);
+  });
+
+  // 雙人模式中間分隔金線
+  if (lanes.length === 2) {
+    boardCtx.strokeStyle = '#facc15';
+    boardCtx.lineWidth = 3;
+    boardCtx.beginPath();
+    boardCtx.moveTo(bWidth / 2, 0);
+    boardCtx.lineTo(bWidth / 2, bHeight);
+    boardCtx.stroke();
+  }
+}
+
+function drawSingleLane(lane, laneIdx, theme) {
+  const bL = projectToLane(laneIdx, -1, 0);
+  const bR = projectToLane(laneIdx,  1, 0);
+  const mL = projectToLane(laneIdx, -1, 0.48);
+  const mR = projectToLane(laneIdx,  1, 0.48);
+  const tL = projectToLane(laneIdx, -1, 1);
+  const tR = projectToLane(laneIdx,  1, 1);
+
+  // 1. 下半段：3D 長木板滾球斜道 (wy: 0 ~ 0.48)
+  const woodGrad = boardCtx.createLinearGradient(0, bL.y, 0, mL.y);
+  woodGrad.addColorStop(0, theme.woodLight);
+  woodGrad.addColorStop(1, theme.woodMid);
+  boardCtx.fillStyle = woodGrad;
+  boardCtx.beginPath();
+  boardCtx.moveTo(bL.x, bL.y);
+  boardCtx.lineTo(bR.x, bR.y);
+  boardCtx.lineTo(mR.x, mR.y);
+  boardCtx.lineTo(mL.x, mL.y);
+  boardCtx.closePath();
+  boardCtx.fill();
+
+  // 縱向木紋與瞄準導向線
+  for (let w = -0.75; w <= 0.75; w += 0.25) {
+    const p0 = projectToLane(laneIdx, w, 0);
+    const p1 = projectToLane(laneIdx, w, 0.48);
+    boardCtx.strokeStyle = 'rgba(255,255,255,0.08)';
+    boardCtx.lineWidth = 1;
+    boardCtx.beginPath();
+    boardCtx.moveTo(p0.x, p0.y);
+    boardCtx.lineTo(p1.x, p1.y);
+    boardCtx.stroke();
+  }
+
+  // 向上箭嘴引導紋
+  for (let wy = 0.16; wy <= 0.40; wy += 0.11) {
+    const c0 = projectToLane(laneIdx, 0, wy + 0.03);
+    const cL = projectToLane(laneIdx, -0.18, wy);
+    const cR = projectToLane(laneIdx,  0.18, wy);
+    boardCtx.strokeStyle = 'rgba(253, 224, 71, 0.18)';
+    boardCtx.lineWidth = 2;
+    boardCtx.beginPath();
+    boardCtx.moveTo(cL.x, cL.y);
+    boardCtx.lineTo(c0.x, c0.y);
+    boardCtx.lineTo(cR.x, cR.y);
+    boardCtx.stroke();
+  }
+
+  // 2. 上半段：頂端三角蜂窩絨布靶區 (wy: 0.48 ~ 1.0)
+  const feltGrad = boardCtx.createLinearGradient(0, mL.y, 0, tL.y);
+  feltGrad.addColorStop(0, theme.headFeltTop);
+  feltGrad.addColorStop(1, theme.headFeltBottom);
+  boardCtx.fillStyle = feltGrad;
+  boardCtx.beginPath();
+  boardCtx.moveTo(mL.x, mL.y);
+  boardCtx.lineTo(mR.x, mR.y);
+  boardCtx.lineTo(tR.x, tR.y);
+  boardCtx.lineTo(tL.x, tL.y);
+  boardCtx.closePath();
+  boardCtx.fill();
+
+  // 斜坡與靶區交界金坎線
+  boardCtx.strokeStyle = theme.railHighlight;
+  boardCtx.lineWidth = 2.5;
+  boardCtx.beginPath();
+  boardCtx.moveTo(mL.x, mL.y);
+  boardCtx.lineTo(mR.x, mR.y);
+  boardCtx.stroke();
+
+  // 發球區虛線 (wy = 0.24)
+  const fL = projectToLane(laneIdx, -0.94, 0.24);
+  const fR = projectToLane(laneIdx,  0.94, 0.24);
+  boardCtx.strokeStyle = 'rgba(253, 224, 71, 0.45)';
+  boardCtx.setLineDash([6, 5]);
+  boardCtx.lineWidth = 1.5;
+  boardCtx.beginPath();
+  boardCtx.moveTo(fL.x, fL.y);
+  boardCtx.lineTo(fR.x, fR.y);
+  boardCtx.stroke();
+  boardCtx.setLineDash([]);
+
+  // 兩側立體護欄木邊
+  boardCtx.strokeStyle = theme.railColor;
+  boardCtx.lineWidth = 8;
+  boardCtx.lineCap = 'round';
+  boardCtx.beginPath();
+  boardCtx.moveTo(bL.x, bL.y);
+  boardCtx.lineTo(tL.x, tL.y);
+  boardCtx.lineTo(tR.x, tR.y);
+  boardCtx.lineTo(bR.x, bR.y);
+  boardCtx.stroke();
+
+  boardCtx.strokeStyle = theme.railHighlight;
+  boardCtx.lineWidth = 2;
+  boardCtx.stroke();
+
+  // 3. 繪製頂端計分洞 (1分黃、2分藍、3分紅心)
+  holes.forEach((h) => {
+    const p = projectToLane(laneIdx, h.wx, h.wy);
+    const rx = Math.max(8, h.r * p.halfW);
+    const ry = Math.max(6, rx * 0.68); // 3D 透視橢圓洞口
+
+    // 外發光環
+    boardCtx.fillStyle = h.color;
+    boardCtx.beginPath();
+    boardCtx.ellipse(p.x, p.y, rx * 1.22, ry * 1.22, 0, 0, Math.PI * 2);
+    boardCtx.fill();
+
+    // 內部黑洞深淵
+    boardCtx.fillStyle = '#09090b';
+    boardCtx.beginPath();
+    boardCtx.ellipse(p.x, p.y + 1.5, rx * 0.88, ry * 0.88, 0, 0, Math.PI * 2);
+    boardCtx.fill();
+
+    // 洞內分數文字
+    boardCtx.fillStyle = h.ring;
+    boardCtx.font = `900 ${Math.max(10, Math.round(rx * 0.82))}px Orbitron, sans-serif`;
+    boardCtx.textAlign = 'center';
+    boardCtx.textBaseline = 'middle';
+    boardCtx.fillText(h.label, p.x, p.y + 1);
+  });
+
+  // 進洞閃光特效
+  lane.holeFlash.forEach((f) => {
+    const p = projectToLane(laneIdx, f.hole.wx, f.hole.wy);
+    const rx = Math.max(10, f.hole.r * p.halfW * (1.8 - f.alpha * 0.5));
+    boardCtx.strokeStyle = `rgba(254, 240, 138, ${f.alpha})`;
+    boardCtx.lineWidth = 4;
+    boardCtx.beginPath();
+    boardCtx.ellipse(p.x, p.y, rx, rx * 0.7, 0, 0, Math.PI * 2);
+    boardCtx.stroke();
+  });
+
+  // 4. 繪製金屬緩衝釘 (Bumpers)
+  bumpers.forEach((bmp) => {
+    const p = projectToLane(laneIdx, bmp.wx, bmp.wy);
+    const r = Math.max(4, bmp.r * p.halfW);
+    boardCtx.fillStyle = '#fde047';
+    boardCtx.beginPath();
+    boardCtx.arc(p.x, p.y, r, 0, Math.PI * 2);
+    boardCtx.fill();
+    boardCtx.strokeStyle = '#713f12';
+    boardCtx.lineWidth = 1.5;
+    boardCtx.stroke();
+  });
+
+  // 5. 繪製拖曳中瞄準虛線
+  activePointers.forEach((drag) => {
+    if (drag.laneIdx !== laneIdx) return;
+    const bp = projectToLane(laneIdx, drag.ball.wx, drag.ball.wy);
+    boardCtx.strokeStyle = '#fde047';
+    boardCtx.lineWidth = 2.5;
+    boardCtx.setLineDash([5, 5]);
+    boardCtx.beginPath();
+    boardCtx.moveTo(bp.x, bp.y);
+    boardCtx.lineTo(bp.x + (drag.curX - drag.startX) * 0.4, bp.y - 75);
+    boardCtx.stroke();
+    boardCtx.setLineDash([]);
+  });
+
+  // 6. 繪製 2 粒立體滾球 (由遠到近排序)
+  const sortedBalls = [...lane.balls].sort((a, b) => b.wy - a.wy);
+  sortedBalls.forEach((ball) => {
+    // 滾動軌跡
+    if (ball.state === 'rolling' && ball.trail.length > 1) {
+      for (let i = 0; i < ball.trail.length; i++) {
+        const tp = projectToLane(laneIdx, ball.trail[i].wx, ball.trail[i].wy);
+        const tr = Math.max(3, ball.r * tp.halfW * (i / ball.trail.length) * 0.65);
+        boardCtx.fillStyle = `rgba(254, 243, 199, ${(i / ball.trail.length) * 0.25})`;
+        boardCtx.beginPath();
+        boardCtx.arc(tp.x, tp.y, tr, 0, Math.PI * 2);
+        boardCtx.fill();
+      }
+    }
+
+    const p = projectToLane(laneIdx, ball.wx, ball.wy);
+    let radius = Math.max(10, ball.r * p.halfW);
+    if (ball.state === 'sinking') {
+      radius *= Math.max(0.2, 1 - ball.sinkTimer * 2.2);
+    }
+
+    // 待命發球區金色呼吸光圈 (令玩家一眼見到粒波)
+    if (ball.state === 'ready' || ball.state === 'grabbed') {
+      boardCtx.strokeStyle = ball.state === 'grabbed' ? '#22d3ee' : 'rgba(250, 204, 21, 0.75)';
+      boardCtx.lineWidth = 2.5;
+      boardCtx.beginPath();
+      boardCtx.arc(p.x, p.y, radius + 4, 0, Math.PI * 2);
+      boardCtx.stroke();
+    }
+
+    // 球體陰影
+    boardCtx.fillStyle = 'rgba(0,0,0,0.45)';
+    boardCtx.beginPath();
+    boardCtx.ellipse(p.x + 2, p.y + radius * 0.35, radius * 0.92, radius * 0.55, 0, 0, Math.PI * 2);
+    boardCtx.fill();
+
+    // 3D 球體材質漸層 (安全半徑檢查避免 Canvas 報錯黑屏)
+    const cSet = theme.ballColors[ball.colorIdx % theme.ballColors.length];
+    const safeR = Math.max(4, radius);
+    const ballGrad = boardCtx.createRadialGradient(
+      p.x - safeR * 0.3,
+      p.y - safeR * 0.3,
+      safeR * 0.1,
+      p.x,
+      p.y,
+      safeR
+    );
+    ballGrad.addColorStop(0, cSet.hi);
+    ballGrad.addColorStop(0.55, cSet.mid);
+    ballGrad.addColorStop(1, cSet.lo);
+
+    boardCtx.fillStyle = ballGrad;
+    boardCtx.beginPath();
+    boardCtx.arc(p.x, p.y, safeR, 0, Math.PI * 2);
+    boardCtx.fill();
+  });
+
+  // 7. 得分飄字動畫
+  lane.popups.forEach((pop) => {
+    const p = projectToLane(laneIdx, pop.wx, pop.wy);
+    boardCtx.save();
+    boardCtx.globalAlpha = pop.alpha;
+    boardCtx.font = '900 18px "Noto Sans TC", sans-serif';
+    boardCtx.fillStyle = pop.color;
+    boardCtx.strokeStyle = '#000000';
+    boardCtx.lineWidth = 3;
+    boardCtx.textAlign = 'center';
+    boardCtx.strokeText(pop.text, p.x, p.y - 12);
+    boardCtx.fillText(pop.text, p.x, p.y - 12);
+    boardCtx.restore();
+  });
+
+  // 雙人模式球道頂部標籤
+  if (lanes.length === 2) {
+    const topCenter = projectToLane(laneIdx, 0, 1.0);
+    boardCtx.fillStyle = 'rgba(0,0,0,0.7)';
+    boardCtx.fillRect(topCenter.x - 58, 4, 116, 20);
+    boardCtx.fillStyle = lane.accentColor;
+    boardCtx.font = 'bold 11px "Noto Sans TC", sans-serif';
+    boardCtx.textAlign = 'center';
+    boardCtx.fillText(lane.title, topCenter.x, 17);
+  }
+}
+
+// ==================== 遊戲主迴圈 ====================
+let lastFrameTime = performance.now();
+function gameLoop(now) {
+  const dt = Math.min(0.05, (now - lastFrameTime) / 1000);
+  lastFrameTime = now;
+
+  updatePhysics(dt);
+  drawTrack();
+  drawBoard();
+
+  requestAnimationFrame(gameLoop);
+}
+
+// 初始化啟動
+setupLanes();
+resizeCanvases();
+setTimeout(resizeCanvases, 80);
+requestAnimationFrame(gameLoop);
+</script>
 </body>
 </html>
